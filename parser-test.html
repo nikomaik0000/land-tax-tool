@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PDF Parser 測試工具</title>
+  <style>
+    body { margin: 24px; color: #222; font: 14px/1.5 system-ui, sans-serif; }
+    input { margin: 12px 0 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 7px; border: 1px solid #bbb; text-align: left; vertical-align: top; }
+    th { background: #f5f5f5; }
+    .number { text-align: right; white-space: nowrap; }
+    .status { margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <h1>PDF Parser 測試工具</h1>
+  <p>可一次選擇多份具文字層的土地增值稅 PDF；此頁僅供開發測試。</p>
+  <input id="files" type="file" accept="application/pdf,.pdf" multiple>
+  <p id="status" class="status"></p>
+  <table>
+    <thead><tr>
+      <th>檔名</th><th>版型</th><th>區</th><th>段</th><th>小段</th><th>地號</th>
+      <th>面積</th><th>公告現值</th><th>持分</th><th>前次移轉</th>
+      <th>自用增值稅</th><th>一般增值稅</th><th>missing fields</th><th>confidence</th>
+    </tr></thead>
+    <tbody id="results"></tbody>
+  </table>
+  <script src="js/parser-test.js?v=20260819-25" type="module"></script>
+</body>
+</html>

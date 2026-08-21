@@ -1,0 +1,33 @@
+# macOS / editor files
+.DS_Store
+**/.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Dependencies and caches
+node_modules/
+.cache/
+coverage/
+
+# Generated output and temporary files
+outputs/
+tmp/
+temp/
+*.log
+*.tmp
+
+# FTP client state / local deployment configuration
+.ftp-deploy-sync-state.json
+.ftpconfig
+ftp-config.*

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>謄本資料整理</title>
+  <link rel="stylesheet" href="css/style.css?v=20260820-2">
+  <link rel="stylesheet" href="css/transcript.css?v=20260821-1">
+  <link rel="stylesheet" href="css/print.css?v=20260819-23">
+</head>
+<body>
+  <main class="app-container">
+    <header class="site-header">
+      <p class="eyebrow">LAND RECORD TOOL</p>
+      <h1>謄本資料整理</h1>
+      <nav class="tool-nav" aria-label="功能切換">
+        <a href="index.html">增值稅試算</a>
+        <a class="is-active" href="transcript.html" aria-current="page">謄本整理</a>
+        <a href="land-value-update.html">公告現值更新</a>
+      </nav>
+    </header>
+
+    <section class="section" aria-labelledby="transcript-upload-title">
+      <div class="section-heading">
+        <h2 id="transcript-upload-title">謄本 PDF</h2>
+        <p>上傳一份具文字層的土地或建物謄本；資料只在此瀏覽器內處理。</p>
+      </div>
+      <div id="transcriptUploadZone" class="upload-zone" tabindex="0">
+        <p class="upload-title">選擇謄本 PDF</p>
+        <p>可按下按鈕選擇，亦可將檔案拖曳至此</p>
+        <label class="btn btn-primary file-picker" for="transcriptPdfFile">選擇檔案</label>
+        <input id="transcriptPdfFile" class="visually-hidden" type="file" accept="application/pdf,.pdf">
+      </div>
+      <div id="transcriptFileList" class="file-list" aria-live="polite"></div>
+      <div class="actions">
+        <button id="reparseTranscript" class="btn btn-secondary" type="button" disabled>重新解析 PDF</button>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="transcript-result-title">
+      <div class="section-heading section-heading-inline">
+        <div>
+          <h2 id="transcript-result-title">土地資料確認</h2>
+          <p>謄本與物價指數資料只作為預填；每個欄位都可直接修正。</p>
+        </div>
+        <label class="check-option transcript-tax-option">
+          <input id="enableTranscriptTax" type="checkbox">
+          <span>試算土地增值稅</span>
+        </label>
+      </div>
+      <p id="transcriptStatus" class="parse-status" aria-live="polite">尚未上傳謄本 PDF。</p>
+      <div id="cpiUploadBlock" class="cpi-upload-block" hidden>
+        <div class="cpi-upload-heading">
+          <h3>物價指數資料</h3>
+          <p>依前次移轉民國年月，自動查找對應物價指數。</p>
+          <p id="cpiSourceStatus" class="cpi-source-status" aria-live="polite">尚未載入</p>
+          <a id="cpiSourceLink" class="source-link" href="#" target="_blank" rel="noopener noreferrer">官方資料來源</a>
+        </div>
+        <label class="calculation-date-field" for="transcriptCalculationDate">
+          <span>試算日期</span>
+          <input id="transcriptCalculationDate" type="date">
+        </label>
+        <details id="cpiAlternativeSources" class="cpi-alternative-sources">
+          <summary>其他資料來源</summary>
+          <div id="cpiUploadZone" class="upload-zone cpi-upload-zone">
+            <p class="upload-title">手動覆蓋物價指數 Excel</p>
+            <p>可點擊選擇或拖曳至此</p>
+            <label class="btn btn-secondary file-picker" for="cpiWorkbookFile">選擇檔案</label>
+            <input id="cpiWorkbookFile" class="visually-hidden" type="file" accept=".xls,.xlsx">
+          </div>
+          <div id="cpiFileList" class="file-list" aria-live="polite"></div>
+          <button id="restoreDefaultCpi" class="btn btn-secondary cpi-restore-button" type="button" hidden>恢復預設物價指數資料</button>
+        </details>
+      </div>
+      <p id="transcriptTableEmpty" class="empty-state">尚無土地資料。請先上傳謄本 PDF。</p>
+      <div id="transcriptTableWrap" class="table-scroll" hidden>
+        <table class="land-table">
+          <colgroup>
+            <col class="col-sequence"><col class="col-district"><col class="col-section"><col class="col-subsection"><col class="col-land-number">
+            <col class="col-area"><col class="col-owner"><col class="col-announced"><col class="col-share">
+            <col class="col-current"><col class="col-transfer-date"><col class="col-transfer-value"><col class="col-index">
+            <col class="col-tax"><col class="col-tax"><col class="col-action">
+          </colgroup>
+          <thead><tr>
+            <th>次序</th><th>區</th><th>段</th><th>小段</th><th>地號</th><th>面積</th><th>所有權人</th>
+            <th>公告現值</th><th>持分</th><th>總現值</th><th>前次移轉日期</th><th>前次移轉現值</th>
+            <th>物價指數</th><th>自用增值稅</th><th>一般增值稅</th><th>操作</th>
+          </tr></thead>
+          <tbody id="transcriptLandRows"></tbody>
+        </table>
+      </div>
+      <p id="transcriptValidation" class="validation-message" hidden></p>
+      <div class="calculation-summary transcript-summary">
+        <div><span>土地總現值</span><strong id="transcriptTotalCurrentValue">0</strong></div>
+      </div>
+    </section>
+
+    <section id="transcriptReportSettingsSection" class="section settings-section" hidden>
+      <div id="transcriptReportSettings"></div>
+    </section>
+
+    <section id="transcriptPreviewSection" class="section preview-section" aria-labelledby="transcript-preview-title" hidden>
+      <div class="section-heading section-heading-inline preview-heading">
+        <div><h2 id="transcript-preview-title">試算表預覽</h2><p>內容會隨謄本資料與試算表設定即時更新。</p></div>
+        <div class="preview-actions">
+          <button id="clearTranscriptPageState" class="btn btn-secondary" type="button">清除目前資料</button>
+          <button id="transcriptDownloadExcel" class="btn btn-primary" type="button">下載 Excel</button>
+          <button id="transcriptPrintReport" class="btn btn-primary" type="button">列印 / 儲存 PDF</button>
+        </div>
+      </div>
+      <p id="transcriptReportWarning" class="report-warning" hidden></p>
+      <div id="transcriptReportPreview" class="report-preview">
+        <div id="transcriptA4Viewport" class="a4-preview-viewport">
+          <article id="transcriptA4Sheet" class="a4-sheet" aria-label="謄本土地增值稅試算表預覽"></article>
+        </div>
+      </div>
+    </section>
+  </main>
+  <style id="transcriptDynamicPrintPage">@page { size: A4 landscape; margin: 8mm; }</style>
+  <script src="js/transcript-app.js?v=20260821-1" type="module"></script>
+</body>
+</html>

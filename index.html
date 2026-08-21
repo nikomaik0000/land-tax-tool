@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>土地及房屋稅費試算</title>
+  <link rel="stylesheet" href="css/style.css?v=20260821-5">
+  <link rel="stylesheet" href="css/print.css?v=20260821-5">
+</head>
+<body>
+  <main class="app-container">
+    <header class="site-header">
+      <p class="eyebrow">LAND TAX TOOL</p>
+      <h1>土地及房屋稅費試算</h1>
+      <nav class="tool-nav" aria-label="功能切換">
+        <a class="is-active" href="index.html" aria-current="page">增值稅試算</a>
+        <a href="transcript.html">謄本整理</a>
+        <a href="land-value-update.html">公告現值更新</a>
+      </nav>
+    </header>
+
+    <section class="section" aria-labelledby="case-title">
+      <div class="section-heading">
+        <h2 id="case-title">案件資料</h2>
+        <p>建立案件基本資訊，解析後的土地預設帶入所有權人。</p>
+      </div>
+      <div class="form-grid">
+        <label class="field">
+          <span>案件名稱</span>
+          <input id="caseName" type="text" value="土地增值稅試算" placeholder="例如：王○○－延平北路">
+        </label>
+        <div class="field owner-manager">
+          <span>所有權人</span>
+          <div class="inline-add-control"><input id="owner" type="text" placeholder="例如：陳＊＊"><button id="addOwner" class="btn btn-secondary" type="button">＋ 新增</button></div>
+          <div id="ownerList" class="owner-list"></div>
+        </div>
+        <div class="field field-wide house-manager">
+          <div class="repeatable-heading"><span>房屋資料（<output id="houseCount">0</output>）</span><button id="addHouse" class="btn btn-secondary" type="button">＋ 新增房屋</button></div>
+          <div id="houseList" class="house-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="upload-title">
+      <div class="section-heading">
+        <h2 id="upload-title">土地增值稅 PDF</h2>
+        <p>可一次選擇多份具文字層的 PDF，資料只在此瀏覽器內處理。</p>
+      </div>
+      <div id="uploadZone" class="upload-zone">
+        <p class="upload-title">選擇土地增值稅 PDF</p>
+        <p>可一次上傳多份檔案，亦可拖曳至此</p>
+        <label class="btn btn-primary file-picker" for="pdfFiles">選擇檔案</label>
+        <input id="pdfFiles" class="visually-hidden" type="file" accept="application/pdf,.pdf" multiple>
+      </div>
+      <div id="fileList" class="file-list" aria-live="polite"></div>
+      <div class="actions">
+        <button id="reparseFiles" class="btn btn-secondary" type="button" disabled>重新解析 PDF</button>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="land-title">
+      <div class="section-heading section-heading-inline">
+        <div>
+          <h2 id="land-title">土地資料確認</h2>
+          <p>自動解析僅作為預填；每個欄位都可直接修正。</p>
+        </div>
+        <button id="addLand" class="btn btn-secondary" type="button">＋ 手動新增土地</button>
+      </div>
+      <p id="tableEmpty" class="empty-state">尚無土地資料。請上傳 PDF，或手動新增一筆。</p>
+      <div id="tableWrap" class="table-scroll" hidden>
+        <table class="land-table">
+          <colgroup>
+            <col class="col-district"><col class="col-section"><col class="col-subsection"><col class="col-land-number">
+            <col class="col-area"><col class="col-owner"><col class="col-house"><col class="col-announced"><col class="col-share">
+            <col class="col-current"><col class="col-transfer-date"><col class="col-transfer-value"><col class="col-index">
+            <col class="col-tax"><col class="col-tax"><col class="col-action">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>區</th><th>段</th><th>小段</th><th>地號</th><th class="numeric">面積</th>
+              <th>所有權人</th><th>對應房屋</th><th class="numeric">公告現值</th><th>持分</th><th class="numeric">總現值</th>
+              <th>前次移轉日期</th><th class="numeric">前次移轉現值</th><th class="numeric">物價指數</th>
+              <th class="numeric">自用增值稅</th><th class="numeric">一般增值稅</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="landRows"></tbody>
+        </table>
+      </div>
+      <div id="calculationSummary" class="calculation-summary" aria-live="polite">
+        <div><span>土地總現值</span><strong id="totalLandCurrentValue">0</strong></div>
+        <div><span>房屋持分現值</span><strong id="summaryHouseCurrentValue">0</strong></div>
+        <div class="summary-total"><span>總現值</span><strong id="caseCurrentValue">0</strong></div>
+        <div><span>契稅 6%</span><strong id="deedTax">0</strong></div>
+      </div>
+    </section>
+
+    <section id="reportSettingsSection" class="section settings-section">
+      <div id="reportSettings"></div>
+    </section>
+
+    <section class="section preview-section" aria-labelledby="preview-title">
+      <div class="section-heading section-heading-inline preview-heading">
+        <div>
+          <h2 id="preview-title">試算表預覽</h2>
+          <p>內容會隨案件資料、土地資料與試算表設定即時更新。</p>
+        </div>
+        <div class="preview-actions">
+          <button id="clearPageState" class="btn btn-secondary" type="button">清除目前資料</button>
+          <button id="downloadExcel" class="btn btn-primary" type="button">下載 Excel</button>
+          <button id="printReport" class="btn btn-primary" type="button">列印 / 儲存 PDF</button>
+        </div>
+      </div>
+      <p id="reportOverflowWarning" class="report-warning" hidden>目前資料量較多，可能無法完整容納於單張 A4。</p>
+      <div id="reportPreview" class="report-preview">
+        <div id="a4PreviewViewport" class="a4-preview-viewport">
+          <article id="a4Sheet" class="a4-sheet" aria-label="土地及房屋稅費試算表預覽"></article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <style id="dynamicPrintPage">@page { size: A4 landscape; margin: 8mm; }</style>
+  <script src="js/app.js?v=20260821-5" type="module"></script>
+</body>
+</html>

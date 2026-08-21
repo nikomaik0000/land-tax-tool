@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>公告現值更新</title>
+  <link rel="stylesheet" href="css/style.css?v=20260820-3">
+  <link rel="stylesheet" href="css/land-value-update.css?v=20260820-4">
+</head>
+<body>
+  <main class="app-container">
+    <header class="site-header">
+      <p class="eyebrow">LAND VALUE TOOL</p>
+      <h1>公告現值更新</h1>
+      <nav class="tool-nav" aria-label="功能切換">
+        <a href="index.html">增值稅試算</a>
+        <a href="transcript.html">謄本整理</a>
+        <a class="is-active" href="land-value-update.html" aria-current="page">公告現值更新</a>
+      </nav>
+    </header>
+
+    <section class="section" aria-labelledby="source-title">
+      <div class="section-heading">
+        <h2 id="source-title">公告現值資料來源</h2>
+        <p id="bundledSourceSummary">正在準備公告現值資料…</p>
+      </div>
+      <div class="source-accordion">
+        <button id="sourceAccordionButton" class="source-accordion-header" type="button" aria-expanded="false" aria-controls="sourceAccordionContent">
+          <span class="settings-accordion-arrow" aria-hidden="true">›</span>
+          <span>官方年度資料</span>
+        </button>
+        <div id="sourceAccordionContent" class="source-accordion-content" hidden>
+          <div id="sourceCards" class="source-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="query-title">
+      <div class="section-heading">
+        <h2 id="query-title">土地資料 Excel</h2>
+        <p>支援目前增值稅試算頁與謄本整理頁匯出的 Excel，也可使用包含必要欄位的一般工作簿。</p>
+      </div>
+      <fieldset class="city-fallback">
+        <legend>資料縣市（Excel 未提供縣市時必須指定）</legend>
+        <label class="radio-option"><input name="fallbackCity" type="radio" value="臺北市"><span>臺北市</span></label>
+        <label class="radio-option"><input name="fallbackCity" type="radio" value="新北市"><span>新北市</span></label>
+      </fieldset>
+      <div id="queryDropZone" class="upload-zone" tabindex="0">
+        <p class="upload-title">選擇土地資料 Excel</p>
+        <p>可點擊選擇，亦可將 .xls / .xlsx 拖曳至此</p>
+        <label class="btn btn-primary file-picker" for="queryFile">選擇檔案</label>
+        <input id="queryFile" class="visually-hidden" type="file" accept=".xls,.xlsx">
+      </div>
+      <div id="queryFileList" class="file-list" aria-live="polite"></div>
+    </section>
+
+    <section class="section" aria-labelledby="result-title">
+      <div class="section-heading section-heading-inline">
+        <div>
+          <h2 id="result-title">公告現值比對結果</h2>
+          <p id="resultSummary">尚未載入土地資料 Excel。</p>
+        </div>
+      </div>
+      <label class="check-option result-display-option">
+        <input id="showOriginalValue" type="checkbox" checked>
+        <span>顯示原公告現值</span>
+      </label>
+      <label class="check-option result-display-option">
+        <input id="showOfficialPrice" type="checkbox" checked>
+        <span>顯示公告地價</span>
+      </label>
+      <p id="resultEmpty" class="empty-state">請先載入官方 CSV 與土地資料 Excel。</p>
+      <div id="resultTableWrap" class="table-scroll update-table-scroll" hidden>
+        <table class="land-table update-table">
+          <thead><tr id="resultHeaderRow"></tr></thead>
+          <tbody id="resultRows"></tbody>
+        </table>
+      </div>
+      <p id="actionMessage" class="validation-message" hidden aria-live="polite"></p>
+      <div class="actions result-actions">
+        <button id="clearLandValuePageState" class="btn btn-secondary" type="button">清除目前資料</button>
+        <button id="downloadResult" class="btn btn-primary" type="button" disabled>下載結果 Excel</button>
+      </div>
+    </section>
+  </main>
+  <script src="js/land-value-update-app.js?v=20260820-4" type="module"></script>
+</body>
+</html>
