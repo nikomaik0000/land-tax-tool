@@ -1,0 +1,24 @@
+{
+  "taipei": {
+    "year": 115,
+    "source": "臺北市政府地政局",
+    "sourceUrl": "https://data.taipei/api/frontstage/tpeod/dataset/resource.download?rid=7802c9b4-fc64-466c-82fc-ec5884bb6871",
+    "datasetPage": "https://data.taipei/dataset/detail?id=7ac6eac3-a998-43ff-a289-6a4e3203c2c3",
+    "updatedAt": "2026-01-02",
+    "officialLastModified": "",
+    "encoding": "big5",
+    "rowCount": 421031,
+    "sha256": "f2ed89270946ef408a97748a110e6e3e309d49317d910fb8f147a19964a20c48"
+  },
+  "newTaipei": {
+    "year": 115,
+    "source": "新北市政府地政局",
+    "sourceUrl": "https://data.ntpc.gov.tw/api/datasets/f0dba44b-5eb5-4f40-953e-6908e335ffc9/csv/zip",
+    "datasetPage": "https://data.ntpc.gov.tw/datasets/f0dba44b-5eb5-4f40-953e-6908e335ffc9",
+    "updatedAt": "2026-01-02",
+    "officialLastModified": "",
+    "encoding": "utf-8",
+    "rowCount": 1149236,
+    "sha256": "91eaf67e22b537c94c1cebbbf84a0b80101c8aa4cb92c201f0fadd2664755b38"
+  }
+}

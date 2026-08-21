@@ -1,0 +1,54 @@
+name: Update annual land-value data
+
+on:
+  schedule:
+    - cron: "23 2 15 1 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-land-value-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install updater dependencies
+        run: python -m pip install --disable-pip-version-check requests beautifulsoup4
+
+      - name: Check Taipei and New Taipei annual data
+        id: update
+        continue-on-error: true
+        run: python scripts/update_land_values.py
+
+      - name: Commit successful city updates
+        if: always()
+        shell: bash
+        run: |
+          git add material/taipei_value.csv material/newtaipei_value.csv material/land-value-metadata.json
+          if git diff --cached --quiet; then
+            echo "Land-value data is unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: update annual land value data"
+          git push origin HEAD:main
+
+      - name: Report source or validation failure
+        if: steps.update.outcome == 'failure'
+        run: exit 1

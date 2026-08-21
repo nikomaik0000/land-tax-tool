@@ -1,0 +1,47 @@
+name: Update CPI tax index data
+
+on:
+  schedule:
+    - cron: "17 2 5 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-cpi-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install updater dependencies
+        run: python -m pip install --disable-pip-version-check requests beautifulsoup4 xlrd
+
+      - name: Check official CPI workbook
+        run: python scripts/update_cpi.py
+
+      - name: Commit changed CPI data
+        shell: bash
+        run: |
+          git add material/cpispleym.xls material/cpi-metadata.json
+          if git diff --cached --quiet; then
+            echo "CPI data is unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: update CPI tax index data"
+          git push origin HEAD:main
