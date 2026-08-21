@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 46 46" role="img" aria-label="房屋與土地格線">
+  <rect width="46" height="46" fill="#ffffff"/>
+  <g transform="translate(7 7)" fill="none" stroke="#222222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 14 16 5l11 9"/>
+    <path d="M8 13v9h16v-9"/>
+    <path d="m8 22-5 7h26l-5-7"/>
+    <path d="m13 22-3 7m9-7 3 7M5 26h22"/>
+  </g>
+</svg>
