@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "city": "新北市",
+  "sourceUpdatedThrough": "114-12-31",
+  "generatedAt": "2026-08-27T08:38:34Z",
+  "totalRows": 865637,
+  "hash": "62a684264208bad36da1f354a318ef5c51fe6f8f9e3a27b4eb788ac7fc3d3336",
+  "districts": {
+    "banqiao": {
+      "name": "板橋區",
+      "file": "banqiao.csv",
+      "rows": 63889,
+      "sha256": "94c3a2681c0fb08ad330830c251231c255296f85421861b01d8d1333fc61cec0"
+    },
+    "sanchong": {
+      "name": "三重區",
+      "file": "sanchong.csv",
+      "rows": 73716,
+      "sha256": "b640890b480c34a8fea899704435900c5851e24aaa5ae92f1ef42d366e266257"
+    },
+    "zhonghe": {
+      "name": "中和區",
+      "file": "zhonghe.csv",
+      "rows": 56533,
+      "sha256": "8e6510d039425ab4d0cd2d25ef0720289ec29ec857c170326f9dd977fe5286e3"
+    },
+    "yonghe": {
+      "name": "永和區",
+      "file": "yonghe.csv",
+      "rows": 38548,
+      "sha256": "4b11e0f4260294eae93c299e09ef6cea1d56c087ed8ddfcb66f569b189e251f2"
+    },
+    "xinzhuang": {
+      "name": "新莊區",
+      "file": "xinzhuang.csv",
+      "rows": 57188,
+      "sha256": "ab6ca0b289bb05919252bb2c8bee59d3bba826c85a0b36d72418a99ab5a7a50f"
+    },
+    "xindian": {
+      "name": "新店區",
+      "file": "xindian.csv",
+      "rows": 67597,
+      "sha256": "326d1aa81fa857e66654432c9c29008d41dcf5c2d347eca4e76863a781cf5ef5"
+    },
+    "tucheng": {
+      "name": "土城區",
+      "file": "tucheng.csv",
+      "rows": 35298,
+      "sha256": "122d15865487fd9fa09c56ead8139eafcc5e8e4595fa618f8003c506b89a1aa0"
+    },
+    "luzhou": {
+      "name": "蘆洲區",
+      "file": "luzhou.csv",
+      "rows": 17032,
+      "sha256": "4aba18bc728e631ed67fba25e9388258d0efc1bd989ec3c3ff2eaa58ae46bbff"
+    },
+    "shulin": {
+      "name": "樹林區",
+      "file": "shulin.csv",
+      "rows": 47668,
+      "sha256": "3c56b48d267c4acd8b4e623c1415119480666d2a3894d2e6b2cc7c6da99e7537"
+    },
+    "xizhi": {
+      "name": "汐止區",
+      "file": "xizhi.csv",
+      "rows": 43535,
+      "sha256": "63346bc3d396371c3f43685c4f7573ee4a931849f586eacd1aa66feecf9ee860"
+    },
+    "yingge": {
+      "name": "鶯歌區",
+      "file": "yingge.csv",
+      "rows": 36750,
+      "sha256": "52b51e528fd8b78f52a4383ad1738b54137a61f3646c1fed626afb2fc3dc7f46"
+    },
+    "sanxia": {
+      "name": "三峽區",
+      "file": "sanxia.csv",
+      "rows": 33901,
+      "sha256": "8186e5100be09622bf2f721f63b2649f9bdd687d87996a0d9558ec096ec885f8"
+    },
+    "tamsui": {
+      "name": "淡水區",
+      "file": "tamsui.csv",
+      "rows": 41586,
+      "sha256": "12a5f9a6c21a11e0e1f2f4a49032b1ad49723fdb2aa61237ad7219e5a410cbb9"
+    },
+    "ruifang": {
+      "name": "瑞芳區",
+      "file": "ruifang.csv",
+      "rows": 18686,
+      "sha256": "6f2ee28a878a470ce1b0e543a5025e41e0c6b56561989d80b27bc21269ae39f5"
+    },
+    "wugu": {
+      "name": "五股區",
+      "file": "wugu.csv",
+      "rows": 22990,
+      "sha256": "d8d09e27f14688a9483c8daaa3ac607d2f990628acd6e68a43329a54f8b2b465"
+    },
+    "taishan": {
+      "name": "泰山區",
+      "file": "taishan.csv",
+      "rows": 22463,
+      "sha256": "7dd9d59c3d5630b9d73d503b0bdaadd21b5e054bb32f95f354337c58f2123353"
+    },
+    "linkou": {
+      "name": "林口區",
+      "file": "linkou.csv",
+      "rows": 47580,
+      "sha256": "9f39b436f463b5fb9c1e36b7753852f4ef7bb839756f37a9d600c97c4a30a786"
+    },
+    "shenkeng": {
+      "name": "深坑區",
+      "file": "shenkeng.csv",
+      "rows": 9633,
+      "sha256": "db8a97e5df3bc30194060ea131b35a0920618d53ccec8ecac07427afadfec548"
+    },
+    "shiding": {
+      "name": "石碇區",
+      "file": "shiding.csv",
+      "rows": 8127,
+      "sha256": "47813275fabe20c9bc7eb593ad99084bc88702d19ae7cbb76a296692ba4a34be"
+    },
+    "pinglin": {
+      "name": "坪林區",
+      "file": "pinglin.csv",
+      "rows": 9429,
+      "sha256": "0ec4215213533e37b6eed676e7d2db1389032c9957cb0a9797149baedd05dfa1"
+    },
+    "sanzhi": {
+      "name": "三芝區",
+      "file": "sanzhi.csv",
+      "rows": 22182,
+      "sha256": "6321c834a84b600695be2fb5b24d89b55fc352759437a8150a43364dfe8bd3f4"
+    },
+    "shimen": {
+      "name": "石門區",
+      "file": "shimen.csv",
+      "rows": 8182,
+      "sha256": "fa5f15422bf2f290112213029128efe01e4152154512cb6e38ba4a42a1c2795c"
+    },
+    "bali": {
+      "name": "八里區",
+      "file": "bali.csv",
+      "rows": 24137,
+      "sha256": "e34ae738253ac569d8b7dd60992a45555319c9c4f38852fdae904e42d034ad60"
+    },
+    "pingxi": {
+      "name": "平溪區",
+      "file": "pingxi.csv",
+      "rows": 5423,
+      "sha256": "506c40188ac2274e5238c4fb33e7604e3e138aab48f3b859bdac317c2d30ab62"
+    },
+    "shuangxi": {
+      "name": "雙溪區",
+      "file": "shuangxi.csv",
+      "rows": 3823,
+      "sha256": "56df037c9a55d0cf51badc6f4f67d6be5e808bd9f5e81e0aaff9970e3ca2ca36"
+    },
+    "gongliao": {
+      "name": "貢寮區",
+      "file": "gongliao.csv",
+      "rows": 15991,
+      "sha256": "91e551b9025b7717aeabb97fda2f0c34fb3224ee17c0c71460bd68326a0bd6c3"
+    },
+    "jinshan": {
+      "name": "金山區",
+      "file": "jinshan.csv",
+      "rows": 16412,
+      "sha256": "848e2fee7db4abc8f6a3345ae24a095b0aa64ff1b3274aa8c869eb8517a3ff48"
+    },
+    "wanli": {
+      "name": "萬里區",
+      "file": "wanli.csv",
+      "rows": 12229,
+      "sha256": "d1420aa5b785d6bbc4b9214063535397c449eafef8812ef904765dffa89610b2"
+    },
+    "wulai": {
+      "name": "烏來區",
+      "file": "wulai.csv",
+      "rows": 5109,
+      "sha256": "9bd20d56863f8fc828d1cb43edee100201fb9e0f3f19d0522fde2c3e6268bd05"
+    }
+  },
+  "sources": [
+    {
+      "key": "banqiao",
+      "office": "板橋地政事務所",
+      "datasetId": "CFA39D71-E79D-43AE-8602-00D29AEB7A3E",
+      "sourceUrl": "https://data.ntpc.gov.tw/datasets/CFA39D71-E79D-43AE-8602-00D29AEB7A3E",
+      "downloadUrl": "https://data.ntpc.gov.tw/api/datasets/CFA39D71-E79D-43AE-8602-00D29AEB7A3E/csv/zip",
+      "rows": 99449,
+      "normalizedRows": 99449,
+      "zipSha256": "77c869d7cdfa5b131ae64d993233223aeb040d07e8fd2c894b4478d1335a69bd"
+    },
+    {
+      "key": "xinzhuang",
+      "office": "新莊地政事務所",
+      "datasetId": "00c1324c-05b4-4497-bb32-4fca669ad6e7",
+      "sourceUrl": "https://data.ntpc.gov.tw/datasets/00c1324c-05b4-4497-bb32-4fca669ad6e7",
+      "downloadUrl": "https://data.ntpc.gov.tw/api/datasets/00c1324c-05b4-4497-bb32-4fca669ad6e7/csv/zip",
+      "rows": 150251,
+      "normalizedRows": 150251,
+      "zipSha256": "83d5036f4baa3be6e077d57445cb9af1ea42a027384d488dd26349a483d281ac"
+    },
+    {
+      "key": "sanchong",
+      "office": "三重地政事務所",
+      "datasetId": "2fec184a-e122-4142-9f7e-a7cc2c24dc3f",
+      "sourceUrl": "https://data.ntpc.gov.tw/datasets/2fec184a-e122-4142-9f7e-a7cc2c24dc3f",
+      "downloadUrl": "https://data.ntpc.gov.tw/api/datasets/2fec184a-e122-4142-9f7e-a7cc2c24dc3f/csv/zip",
+      "rows": 90812,
+      "normalizedRows": 90812,
+      "zipSha256": "37bbdaba3f02b0852d6828c1a33456ab1226dabe9263a5bea8cb43408b77de0f"
+    },
+    {
+      "key": "zhonghe",
+      "office": "中和地政事務所",
+      "datasetId": "440A7BB7-B798-4301-BE0C-56DE87213283",
+      "sourceUrl": "https://data.ntpc.gov.tw/datasets/440A7BB7-B798-4301-BE0C-56DE87213283",
+      "downloadUrl": "https://data.ntpc.gov.tw/api/datasets/440A7BB7-B798-4301-BE0C-56DE87213283/csv/zip",
+      "rows": 101029,
+      "normalizedRows": 101029,
+      "zipSha256": "b339a6dc305d0efdca105646a508bf24df2b446ac6f6d3ceaf0f15ad90517121"
+    },
+    {
+      "key": "xindian",
+      "office": "新店地政事務所",
+      "datasetId": "459b08ab-aebb-49fd-9d1f-f50ecf8acad6",
+      "sourceUrl": "https://data.ntpc.gov.tw/datasets/459b08ab-aebb-49fd-9d1f-f50ecf8acad6",
+      "downloadUrl": "https://data.ntpc.gov.tw/api/datasets/459b08ab-aebb-49fd-9d1f-f50ecf8acad6/csv/zip",
+      "rows": 99950,
+      "normalizedRows": 99950,
+      "zipSha256": "ea3bad027a58c7a72ead1b3eb04dc5316e12a59a4eb888d18906aea0de6fa94c"
+    },
+    {
+      "key": "shulin",
+      "office": "樹林地政事務所",
+      "datasetId": "f74713e5-97d3-4275-85ed-9d7922f7aaf9",
+      "sourceUrl": "https://data.ntpc.gov.tw/datasets/f74713e5-97d3-4275-85ed-9d7922f7aaf9",
+      "downloadUrl": "https://data.ntpc.gov.tw/api/datasets/f74713e5-97d3-4275-85ed-9d7922f7aaf9/csv/zip",
+      "rows": 118344,
+      "normalizedRows": 118343,
+      "zipSha256": "74e821c3cd2c6461d8f7559d9e3c73c107906c20aa5c5c11548d201b78a557f5"
+    },
+    {
+      "key": "xizhi",
+      "office": "汐止地政事務所",
+      "datasetId": "3005f2b0-7552-4093-ae7d-1d8b68093aa3",
+      "sourceUrl": "https://data.ntpc.gov.tw/datasets/3005f2b0-7552-4093-ae7d-1d8b68093aa3",
+      "downloadUrl": "https://data.ntpc.gov.tw/api/datasets/3005f2b0-7552-4093-ae7d-1d8b68093aa3/csv/zip",
+      "rows": 72186,
+      "normalizedRows": 72186,
+      "zipSha256": "24917c6efead98dd7c8a42ba8cc2f34c6d93ff49f47673a60dfb3bf64e551c97"
+    },
+    {
+      "key": "tamsui",
+      "office": "淡水地政事務所",
+      "datasetId": "cfae996c-bf75-4bc7-8411-894cd0428d22",
+      "sourceUrl": "https://data.ntpc.gov.tw/datasets/cfae996c-bf75-4bc7-8411-894cd0428d22",
+      "downloadUrl": "https://data.ntpc.gov.tw/api/datasets/cfae996c-bf75-4bc7-8411-894cd0428d22/csv/zip",
+      "rows": 96131,
+      "normalizedRows": 96131,
+      "zipSha256": "4941d4e6c01d41871e39c6cb49af67d72d7189d448a242edaffa053033469d48"
+    },
+    {
+      "key": "ruifang",
+      "office": "瑞芳地政事務所",
+      "datasetId": "e2cd8451-c654-43d4-9b27-8991cebbe94a",
+      "sourceUrl": "https://data.ntpc.gov.tw/datasets/e2cd8451-c654-43d4-9b27-8991cebbe94a",
+      "downloadUrl": "https://data.ntpc.gov.tw/api/datasets/e2cd8451-c654-43d4-9b27-8991cebbe94a/csv/zip",
+      "rows": 43929,
+      "normalizedRows": 43929,
+      "zipSha256": "44a93477e035f6c84779fdb5e0f9a30f6b6be1cd380ab4ce74c0c05d56407ad2"
+    }
+  ]
+}

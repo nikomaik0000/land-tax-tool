@@ -1,6 +1,7 @@
 import { formatLandNumber } from "./formatters.js";
 
 const CJK_DIGITS = Object.freeze({ 零: "0", 〇: "0", 一: "1", 二: "2", 三: "3", 四: "4", 五: "5", 六: "6", 七: "7", 八: "8", 九: "9", 十: "10" });
+const normalizedText = (value) => String(value ?? "").normalize("NFKC").replace(/[\s　]+/g, "").trim();
 
 export function normalizeCity(value) {
   const text = String(value ?? "").trim().replaceAll("台", "臺");
@@ -11,17 +12,17 @@ export function normalizeCity(value) {
 }
 
 export function normalizeDistrict(value) {
-  return String(value ?? "").trim().replace(/^[臺台]北市|^新北市/, "").replace(/[區鄉鎮市]$/, "");
+  return normalizedText(value).replace(/^[臺台]北市|^新北市/, "").replace(/[區鄉鎮市]$/, "");
 }
 
 function normalizeSubsection(value) {
-  const text = String(value ?? "").trim().replace(/小段$/, "");
+  const text = normalizedText(value).replace(/小段$/, "");
   return CJK_DIGITS[text] ?? text;
 }
 
 export function splitSectionAndSubsection(sectionValue, subsectionValue = "") {
-  let section = String(sectionValue ?? "").trim();
-  let subsection = String(subsectionValue ?? "").trim();
+  let section = normalizedText(sectionValue);
+  let subsection = normalizedText(subsectionValue);
   const combined = section.match(/^(.*?段)([^段]+小段)$/);
   if (combined) {
     section = combined[1];
@@ -34,7 +35,12 @@ export function splitSectionAndSubsection(sectionValue, subsectionValue = "") {
 }
 
 export function normalizeLandNumber(value) {
-  return formatLandNumber(String(value ?? "").trim());
+  return formatLandNumber(normalizedText(value));
+}
+
+export function buildLandNumberLookupKey(input) {
+  const { section, subsection } = splitSectionAndSubsection(input.section, input.subsection);
+  return [normalizeCity(input.city), normalizeDistrict(input.district), section, subsection, normalizeLandNumber(input.landNumber)].join("|");
 }
 
 export function buildLandValueKey(input) {

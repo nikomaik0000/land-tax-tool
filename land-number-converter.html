@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>新舊地號批次查詢</title>
+  <link rel="icon" href="./icon/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon/apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="css/style.css?v=20260827-1">
+  <link rel="stylesheet" href="css/land-value-update.css?v=20260827-1">
+  <link rel="stylesheet" href="css/land-number-converter.css?v=20260827-2">
+</head>
+<body>
+  <main class="app-container">
+    <header class="site-header">
+      <p class="eyebrow">LAND NUMBER TOOL</p>
+      <h1>新舊地號批次查詢</h1>
+      <nav class="tool-nav" aria-label="功能切換">
+        <a href="index.html">增值稅試算</a>
+        <a href="transcript.html">謄本整理</a>
+        <a href="land-value-update.html">公告現值更新</a>
+        <a class="is-active" href="land-number-converter.html" aria-current="page">新舊地號查詢</a>
+      </nav>
+    </header>
+
+    <section class="section" aria-labelledby="converter-source-title">
+      <div class="section-heading">
+        <h2 id="converter-source-title">新舊地號資料</h2>
+        <p id="converterSourceSummary">正在讀取兩市資料清單…</p>
+      </div>
+      <div class="source-accordion">
+        <button id="converterSourceAccordion" class="source-accordion-header" type="button" aria-expanded="false" aria-controls="converterSourceContent">
+          <span class="settings-accordion-arrow" aria-hidden="true">›</span><span>資料來源</span>
+        </button>
+        <div id="converterSourceContent" class="source-accordion-content converter-source-content" hidden>
+          <div id="sourceCitySummaries" class="converter-source-cities"></div>
+          <p id="loadedDistricts">本次尚未載入行政區資料。</p>
+          <div class="source-actions">
+            <a class="btn btn-secondary" href="https://data.ntpc.gov.tw/datasets/CFA39D71-E79D-43AE-8602-00D29AEB7A3E" target="_blank" rel="noopener noreferrer">新北官方資料</a>
+            <a class="btn btn-secondary" href="https://data.taipei/dataset/detail?id=05359dfb-6347-4e0a-ad84-34b306896756" target="_blank" rel="noopener noreferrer">臺北官方資料</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="converter-upload-title">
+      <div class="section-heading">
+        <h2 id="converter-upload-title">土地資料 Excel</h2>
+        <p>Excel 有縣市欄時依每列判斷，可混合臺北市與新北市；沒有縣市欄時使用下方查詢城市。</p>
+      </div>
+      <fieldset class="converter-direction">
+        <legend>查詢城市（Excel 沒有縣市欄時使用）</legend>
+        <label class="radio-option"><input name="selectedCity" type="radio" value="新北市"><span>新北市</span></label>
+        <label class="radio-option"><input name="selectedCity" type="radio" value="臺北市"><span>臺北市</span></label>
+      </fieldset>
+      <fieldset class="converter-direction">
+        <legend>查詢方向</legend>
+        <label class="radio-option"><input name="queryDirection" type="radio" value="old-to-new"><span>舊地號 → 新地號</span></label>
+        <label class="radio-option"><input name="queryDirection" type="radio" value="new-to-old"><span>新地號 → 舊地號</span></label>
+      </fieldset>
+      <div id="converterDropZone" class="upload-zone" tabindex="0">
+        <p class="upload-title">選擇土地資料 Excel</p>
+        <p>可點擊選擇，亦可將 .xls / .xlsx 拖曳至此</p>
+        <label class="btn btn-primary file-picker" for="converterFile">選擇檔案</label>
+        <input id="converterFile" class="visually-hidden" type="file" accept=".xls,.xlsx">
+      </div>
+      <div id="converterFileList" class="file-list" aria-live="polite"></div>
+    </section>
+
+    <section class="section" aria-labelledby="converter-result-title">
+      <div class="section-heading">
+        <h2 id="converter-result-title">新舊地號查詢結果</h2>
+        <p id="converterResultSummary">尚未載入土地資料 Excel。</p>
+      </div>
+      <p id="converterResultEmpty" class="empty-state">請先上傳土地資料 Excel。</p>
+      <div id="converterResultWrap" class="table-scroll converter-table-scroll" hidden>
+        <table class="land-table converter-table">
+          <thead><tr id="converterResultHeader"></tr></thead>
+          <tbody id="converterResultRows"></tbody>
+        </table>
+      </div>
+      <p id="converterActionMessage" class="validation-message" hidden aria-live="polite"></p>
+      <p class="converter-footnote">部分特殊重測、分割、合併或未納入開放資料之案件，建議再至官方地政系統人工確認。</p>
+      <div class="actions result-actions">
+        <button id="clearConverterState" class="btn btn-secondary" type="button">清除目前資料</button>
+        <button id="downloadConverterResult" class="btn btn-primary" type="button" disabled>下載查詢結果 Excel</button>
+      </div>
+    </section>
+  </main>
+  <script src="js/land-number-converter-app.js?v=20260827-2" type="module"></script>
+</body>
+</html>

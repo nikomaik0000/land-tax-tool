@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "city": "臺北市",
+  "datasetId": "05359dfb-6347-4e0a-ad84-34b306896756",
+  "resourceId": "900696f2-7202-4501-97cf-fbcd6c72ddfe",
+  "sourceUrl": "https://data.taipei/dataset/detail?id=05359dfb-6347-4e0a-ad84-34b306896756",
+  "resourceUrl": "https://data.taipei/api/frontstage/tpeod/dataset/resource.download?rid=900696f2-7202-4501-97cf-fbcd6c72ddfe",
+  "sourceUpdatedAt": "2023-12-21T10:14:02+08:00",
+  "updateFrequency": "不定期",
+  "generatedAt": "2026-08-27T09:15:02Z",
+  "sourceRows": 342894,
+  "totalRows": 342299,
+  "hash": "a013014618c5c5c031328f556935474d07761f60dc6ce16aef8b8b2bce9a4557",
+  "sourceSha256": "6d4dbd3444e9204faea4070099299cbafbcd0c08c62873b5d1ca1b36520d60fe",
+  "districts": {
+    "zhongzheng": {
+      "name": "中正區",
+      "file": "zhongzheng.csv",
+      "rows": 15497,
+      "sha256": "a768529fb5b91bfe2bb2397f3131754bb375659578cd6d5d0ac28a2b02e17bc1"
+    },
+    "datong": {
+      "name": "大同區",
+      "file": "datong.csv",
+      "rows": 26642,
+      "sha256": "103ee7f34761ea5b9f519ce4bb142d67ab92356af428b2f5349db5b83f2ab37b"
+    },
+    "zhongshan": {
+      "name": "中山區",
+      "file": "zhongshan.csv",
+      "rows": 28661,
+      "sha256": "060e55bd1e78683391bc63cfe35f757b94bdb743365b37d40ce830ff2db513e7"
+    },
+    "songshan": {
+      "name": "松山區",
+      "file": "songshan.csv",
+      "rows": 10342,
+      "sha256": "2285658bee8c4a37cd8fba2d40362ee967bfa622c40118f51cda7aab09d83e92"
+    },
+    "daan": {
+      "name": "大安區",
+      "file": "daan.csv",
+      "rows": 37398,
+      "sha256": "949f205902644ec24fbb58671c3c979b15afb3eaaa561cf854acc99347d3e575"
+    },
+    "wanhua": {
+      "name": "萬華區",
+      "file": "wanhua.csv",
+      "rows": 31857,
+      "sha256": "a8263c8dc251d7f12bb429fd9dd2b1790f1c9e6e59bc0c396ee4a4ea5c3747da"
+    },
+    "xinyi": {
+      "name": "信義區",
+      "file": "xinyi.csv",
+      "rows": 20305,
+      "sha256": "91764d670a363674fd6bc7694fb5ad4537da6015158812cd4f9fc265eeb6f142"
+    },
+    "shilin": {
+      "name": "士林區",
+      "file": "shilin.csv",
+      "rows": 41728,
+      "sha256": "cb42e4bf9b9298e21921de08ac129cda86e7a60c84752dbf41f1d3170b7df5b4"
+    },
+    "beitou": {
+      "name": "北投區",
+      "file": "beitou.csv",
+      "rows": 28836,
+      "sha256": "13d5a671e113ca787846f4b0c7a7352c01936854c883ee873f52f98ebf11b48e"
+    },
+    "neihu": {
+      "name": "內湖區",
+      "file": "neihu.csv",
+      "rows": 31427,
+      "sha256": "93588ba628a4dbc27ac23ded73e7151b82e65376f163d0e17b46db0b56b70412"
+    },
+    "nangang": {
+      "name": "南港區",
+      "file": "nangang.csv",
+      "rows": 19907,
+      "sha256": "201356edb64442d8d0d378c1f0b17554acc6faf2a3bef56c9bcf3134f5241b4c"
+    },
+    "wenshan": {
+      "name": "文山區",
+      "file": "wenshan.csv",
+      "rows": 49699,
+      "sha256": "4c519e02a9d51d4b513e5c4042b5da1dc5621fa4c412212415c9dd9135819ac0"
+    }
+  }
+}
