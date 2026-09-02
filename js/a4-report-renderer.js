@@ -2,6 +2,7 @@ import { clauses } from "./clauses.js?v=20260818-9";
 import { calculateGiftTax, calculateTaxSummaryByOwner, calculateTotalDeedTax, calculateTransferTaxTotals } from "./calculations.js";
 import { formatArea, formatLandNumber, formatMoney } from "./formatters.js?v=20260819-25";
 import { hasEffectiveHouseData, ownerName } from "./relationships.js";
+import { formatZoningForPrint, getVisiblePrintColumns } from "./zoning-print.js";
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -9,15 +10,15 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character
 
 const fraction = (numerator, denominator) => `${Number(numerator) || 0} / ${Number(denominator) || 0}`;
 
-export function getReportRowCount(lands, showLandZoning = false) {
+export function getReportRowCount(lands, showLandZoning = false, zoningPrintLayout = "row") {
   return (Array.isArray(lands) ? lands : []).reduce(
-    (count, land) => count + Math.max(1, land.previousTransfers?.length ?? 0) + (showLandZoning && String(land.zoning ?? "").trim() ? 1 : 0),
+    (count, land) => count + Math.max(1, land.previousTransfers?.length ?? 0) + (showLandZoning && zoningPrintLayout === "row" && String(land.zoning ?? "").trim() ? 1 : 0),
     0
   );
 }
 
 export function getReportDensity(state) {
-  const rowCount = getReportRowCount(state.lands, state.displayOptions.showLandZoning);
+  const rowCount = getReportRowCount(state.lands, state.displayOptions.showLandZoning, state.displayOptions.zoningPrintLayout);
   const clauseCount = state.selectedClauses.length + (state.customNotes ?? []).filter((note) => note.enabled !== false && String(note.content ?? "").trim()).length;
   const score = rowCount + clauseCount * 1.5 + (state.displayOptions.showTaxSummary ? 0.5 : 0) + (state.giftTax?.enabled ? 5 : 0);
   const density = score <= 5 ? "normal" : score <= 10 ? "compact" : "dense";
@@ -26,46 +27,55 @@ export function getReportDensity(state) {
 
 function basicCells(state, land, rowSpan) {
   const span = ` rowspan="${rowSpan}"`;
-  return `<td${span}>${escapeHtml(land.district)}</td>
-    <td${span}>${escapeHtml(land.section)}</td>
-    <td${span}>${escapeHtml(land.subsection)}</td>
+  const visible = { district: true, section: true, subsection: true, owner: true, ...(state.displayOptions.printLandColumns ?? {}) };
+  return `${visible.district ? `<td${span}>${escapeHtml(land.district)}</td>` : ""}
+    ${visible.section ? `<td${span}>${escapeHtml(land.section)}</td>` : ""}
+    ${visible.subsection ? `<td${span}>${escapeHtml(land.subsection)}</td>` : ""}
     <td${span}>${escapeHtml(formatLandNumber(land.landNumber))}</td>
     <td${span}>${formatArea(land.area)}</td>
-    <td${span}>${escapeHtml(ownerName(state, land.ownerId, land.owner))}</td>
+    ${visible.owner ? `<td${span}>${escapeHtml(ownerName(state, land.ownerId, land.owner))}</td>` : ""}
     <td class="report-money"${span}>${formatMoney(land.announcedValue)}</td>
     <td${span}>${fraction(land.shareNumerator, land.shareDenominator)}</td>
     <td class="report-money report-current-value"${span}>${formatMoney(land.currentValue)}</td>`;
 }
 
-function transferCells(transfer, showSelfUseTax) {
+function transferCells(state, land, transfer, index, rowSpan) {
+  const showSelfUseTax = state.displayOptions.showSelfUseTax;
+  const zoningColumn = state.displayOptions.showLandZoning && state.displayOptions.zoningPrintLayout === "column";
+  const zoning = formatZoningForPrint(land.zonings?.length ? land.zonings : land.zoning, state.displayOptions.zoningTextMode);
+  const zoningCell = zoningColumn && index === 0 ? `<td class="report-zoning-column" rowspan="${rowSpan}">${escapeHtml(zoning)}</td>` : "";
   if (!transfer) {
-    return `<td></td><td class="report-money"></td><td></td>${showSelfUseTax ? '<td class="report-money"></td>' : ""}<td class="report-money"></td>`;
+    return `<td></td><td class="report-money"></td><td></td>${showSelfUseTax ? '<td class="report-money"></td>' : ""}<td class="report-money"></td>${zoningCell}`;
   }
   return `<td>${escapeHtml(transfer.date)}</td>
     <td class="report-money">${formatMoney(transfer.previousValue)}</td>
     <td>${escapeHtml(transfer.priceIndex || "")}</td>
     ${showSelfUseTax ? `<td class="report-money">${formatMoney(transfer.selfUseTax)}</td>` : ""}
-    <td class="report-money">${formatMoney(transfer.generalTax)}</td>`;
+    <td class="report-money">${formatMoney(transfer.generalTax)}</td>
+    ${zoningCell}`;
 }
 
 function singleLandRows(state, land) {
     const transfers = land.previousTransfers.length ? land.previousTransfers : [null];
     const rows = transfers.map((transfer, index) => `<tr>
       ${index === 0 ? basicCells(state, land, transfers.length) : ""}
-      ${transferCells(transfer, state.displayOptions.showSelfUseTax)}
+      ${transferCells(state, land, transfer, index, transfers.length)}
     </tr>`).join("");
-    const zoning = state.displayOptions.showLandZoning ? String(land.zoning ?? "").trim() : "";
-    const columnCount = state.displayOptions.showSelfUseTax ? 14 : 13;
-    return rows + (zoning ? `<tr class="report-zoning-row"><td colspan="${columnCount}">使用分區：${escapeHtml(zoning)}</td></tr>` : "");
+    const zoning = state.displayOptions.showLandZoning ? formatZoningForPrint(land.zonings?.length ? land.zonings : land.zoning, state.displayOptions.zoningTextMode) : "";
+    const columnCount = getVisiblePrintColumns(state.displayOptions).length;
+    return rows + (zoning && state.displayOptions.zoningPrintLayout !== "column" ? `<tr class="report-zoning-row"><td colspan="${columnCount}">使用分區：${escapeHtml(zoning)}</td></tr>` : "");
 }
 
 function houseRow(state, house) {
+  const columns = getVisiblePrintColumns(state.displayOptions);
+  const shareIndex = columns.findIndex((column) => column.key === "share");
+  const currentIndex = columns.findIndex((column) => column.key === "current");
+  const trailing = columns.length - currentIndex - 1;
   return `<tr class="report-house-row">
-    <td colspan="7" class="report-house-address">房屋座落：${escapeHtml(house.address || "—")}</td>
+    <td colspan="${shareIndex}" class="report-house-address">房屋座落：${escapeHtml(house.address || "—")}</td>
     <td class="report-house-share">${fraction(house.shareNumerator, house.shareDenominator)}</td>
     <td class="report-money report-current-value">${formatMoney(house.currentValue)}</td>
-    <td colspan="3"></td>
-    ${state.displayOptions.showSelfUseTax ? "<td></td>" : ""}<td></td>
+    ${trailing ? `<td colspan="${trailing}"></td>` : ""}
   </tr>`;
 }
 
@@ -79,12 +89,18 @@ function mainTableRows(state, totals) {
     if (house && !laterUse && !renderedHouses.has(house.id)) { html += houseRow(state, house); renderedHouses.add(house.id); }
   });
   for (const house of state.houses ?? []) if (!renderedHouses.has(house.id) && (String(house.address || "").trim() || Number(house.assessedValue) > 0)) html += houseRow(state, house);
+  const columns = getVisiblePrintColumns(state.displayOptions);
+  const currentIndex = columns.findIndex((column) => column.key === "current");
+  const selfUseIndex = columns.findIndex((column) => column.key === "selfUseTax");
+  const taxStart = selfUseIndex >= 0 ? selfUseIndex : columns.findIndex((column) => column.key === "generalTax");
+  const trailing = columns.length - columns.findIndex((column) => column.key === "generalTax") - 1;
   return `${html}<tr class="report-total-row">
-    <td colspan="8">合計</td>
+    <td colspan="${currentIndex}">合計</td>
     <td class="report-money">${formatMoney(state.caseCurrentValue)}</td>
-    <td colspan="3"></td>
+    ${taxStart - currentIndex - 1 ? `<td colspan="${taxStart - currentIndex - 1}"></td>` : ""}
     ${state.displayOptions.showSelfUseTax ? `<td class="report-money">${formatMoney(totals.selfUseTax)}</td>` : ""}
     <td class="report-money">${formatMoney(totals.generalTax)}</td>
+    ${trailing ? `<td colspan="${trailing}"></td>` : ""}
   </tr>`;
 }
 
@@ -201,6 +217,7 @@ export function renderA4Report(state) {
   const portraitGiftWarning = state.displayOptions.orientation === "portrait" && giftColumnCount > 8;
   const taxSummary = state.displayOptions.showTaxSummary ? taxSummaryMarkup(state, totals, giftResult) : "";
   const noteMarkup = selectedClauseMarkup(state.selectedClauses) + customNotesMarkup(state.customNotes);
+  const columns = getVisiblePrintColumns(state.displayOptions);
 
   const html = `<div class="report-document density-${density}">
     <header class="report-header">
@@ -209,16 +226,10 @@ export function renderA4Report(state) {
 
     <table class="a4-land-table ${showSelfUseTax ? "show-self-use" : "hide-self-use"}">
       <colgroup>
-        <col class="r-district"><col class="r-section"><col class="r-subsection"><col class="r-number">
-        <col class="r-area"><col class="r-owner"><col class="r-announced"><col class="r-share"><col class="r-current">
-        <col class="r-date"><col class="r-previous"><col class="r-index">
-        ${showSelfUseTax ? '<col class="r-tax">' : ""}<col class="r-tax">
+        ${columns.map((column) => `<col class="${column.className}">`).join("")}
       </colgroup>
       <thead><tr>
-        <th>區</th><th>段</th><th>小段</th><th>地號</th><th>面積</th><th>所有<br>權人</th>
-        <th>公告<br>現值</th><th>持分</th><th>總現值</th><th>前次<br>移轉日期</th>
-        <th>前次<br>移轉現值</th><th>物價<br>指數</th>
-        ${showSelfUseTax ? "<th>自用<br>增值稅</th>" : ""}<th>一般<br>增值稅</th>
+        ${columns.map((column) => `<th>${column.label}</th>`).join("")}
       </tr></thead>
       <tbody>${mainTableRows(state, totals)}</tbody>
     </table>

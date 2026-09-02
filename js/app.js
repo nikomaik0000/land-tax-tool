@@ -4,7 +4,7 @@ import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260902-1";
 import { renderFiles, renderLandTable } from "./report-renderer.js?v=20260902-2";
 import { formatArea, formatLandNumber, formatMoney, parseFormattedNumber } from "./formatters.js?v=20260819-25";
 import { calculateCaseCurrentValue, calculateGiftTax, calculateHouseCurrentValue, calculateHouseOwnerDeedTax, calculateLandCurrentValue, calculateTotalDeedTax, calculateTotalHouseCurrentValue, calculateTotalLandCurrentValue, calculateTransferTaxTotals } from "./calculations.js";
-import { renderA4Report } from "./a4-report-renderer.js?v=20260902-2";
+import { renderA4Report } from "./a4-report-renderer.js?v=20260902-3";
 import { exportExcel } from "./excel-export.js?v=20260902-2";
 import { createReportSettings } from "./report-settings.js";
 import { createHouse, ensureOwner, hasEffectiveHouseData, houseLabel, ownerName } from "./relationships.js";

@@ -22,7 +22,12 @@ export const state = {
 Object.assign(state, restored, {
   files: [],
   house: { ...defaultHouse, ...(restored.house ?? {}) },
-  displayOptions: { ...reportConfiguration.displayOptions, ...(restored.displayOptions ?? {}), taxSummaryItems: { ...reportConfiguration.displayOptions.taxSummaryItems, ...(restored.displayOptions?.taxSummaryItems ?? {}) } },
+  displayOptions: {
+    ...reportConfiguration.displayOptions,
+    ...(restored.displayOptions ?? {}),
+    taxSummaryItems: { ...reportConfiguration.displayOptions.taxSummaryItems, ...(restored.displayOptions?.taxSummaryItems ?? {}) },
+    printLandColumns: { ...reportConfiguration.displayOptions.printLandColumns, ...(restored.displayOptions?.printLandColumns ?? {}) }
+  },
   giftTax: { ...reportConfiguration.giftTax, ...(restored.giftTax ?? {}) },
   selectedClauses: restored.selectedClauses ?? reportConfiguration.selectedClauses
 });

@@ -13,6 +13,9 @@ export function createDefaultReportConfiguration() {
       sectionSpacing: "relaxed",
       fontSize: "medium",
       showLandZoning: false,
+      zoningPrintLayout: "row",
+      zoningTextMode: "full",
+      printLandColumns: { district: true, section: true, subsection: true, owner: true },
       showSelfUseTax: true,
       showTaxSummary: true,
       taxSummaryItems: { selfUseTax: true, generalTax: true, deedTax: true, giftTax: false }
@@ -55,9 +58,14 @@ export function createReportSettings({ container, state, onChange = () => {}, on
           <label class="check-option"><input data-toggle="showSelfUseTax" type="checkbox"${checked(state.displayOptions.showSelfUseTax)}><span>顯示自用增值稅</span></label>
           <label class="check-option"><input data-toggle="showLandZoning" type="checkbox"${checked(state.displayOptions.showLandZoning)}><span>帶入土地使用分區</span></label>
           <div class="nested-options" data-zoning-options${state.displayOptions.showLandZoning ? "" : " hidden"}>
+            <div class="layout-setting-row"><span>列印位置</span><div class="option-row compact-option-row">${radio("zoningPrintLayout", "row", "獨立一列")}${radio("zoningPrintLayout", "column", "右側欄位")}</div></div>
+            <div class="layout-setting-row"><span>文字內容</span><div class="option-row compact-option-row">${radio("zoningTextMode", "full", "完整內容")}${radio("zoningTextMode", "short", "僅分區名稱")}</div></div>
             <p class="settings-description">目前自動查詢支援臺北市，資料來源為臺北市政府都市發展局。</p>
             <button class="btn btn-secondary" data-requery-zoning type="button">重新查詢使用分區</button>
           </div>
+        </div>
+        <div class="settings-group"><h3>土地欄位</h3>
+          ${[["district","區"],["section","段"],["subsection","小段"],["owner","所有權人"]].map(([key,label]) => `<label class="check-option"><input data-print-land-column="${key}" type="checkbox"${checked(state.displayOptions.printLandColumns[key])}><span>${label}</span></label>`).join("")}
         </div>
         <div class="settings-group"><h3>贈與稅試算</h3>
           <label class="check-option"><input data-toggle="giftTax" type="checkbox"${checked(state.giftTax.enabled)}><span>啟用贈與稅試算</span></label>
@@ -130,6 +138,7 @@ export function createReportSettings({ container, state, onChange = () => {}, on
       if (!input.checked) state.displayOptions.taxSummaryItems.giftTax = false;
     }
     if (input.dataset.summaryItem) state.displayOptions.taxSummaryItems[input.value] = input.checked;
+    if (input.dataset.printLandColumn) state.displayOptions.printLandColumns[input.dataset.printLandColumn] = input.checked;
     if (input.dataset.clause !== undefined) state.selectedClauses = [...container.querySelectorAll("[data-clause]:checked")].map((item) => item.value);
     if (input.dataset.customNoteEnabled !== undefined) {
       const note = state.customNotes.find((item) => item.id === input.closest("[data-custom-note-id]").dataset.customNoteId);
