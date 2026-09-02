@@ -40,9 +40,17 @@ export function createEmptyTransfer() {
 
 export function createEmptyLand(overrides = {}) {
   return {
-    id: createId(), sourceFileId: null, district: "", section: "", subsection: "",
+    id: createId(), sourceFileId: null, city: "臺北市", district: "", section: "", subsection: "",
     landNumber: "", rawLandNumber: "", area: 0, owner: state.owner, ownerId: state.owners[0]?.id ?? null, houseId: null, announcedValue: 0,
     shareNumerator: 1, shareDenominator: 1, previousTransfers: [],
-    currentValue: 0, ...overrides
+    currentValue: 0, zoning: "", zonings: [], zoningStatus: "", zoningManual: false, ...overrides
   };
 }
+
+state.lands = (state.lands ?? []).map((land) => ({
+  ...land,
+  zoning: String(land.zoning ?? ""),
+  zonings: Array.isArray(land.zonings) ? land.zonings : (land.zoning ? [String(land.zoning)] : []),
+  zoningStatus: String(land.zoningStatus ?? ""),
+  zoningManual: Boolean(land.zoningManual)
+}));

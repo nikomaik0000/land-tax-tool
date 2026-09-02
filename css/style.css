@@ -105,6 +105,7 @@ select:focus { border-color: #555555; }
 .land-table col.col-district { width: 70px; }
 .land-table col.col-subsection { width: 80px; }
 .land-table col.col-land-number { width: 90px; }
+.land-table col.col-zoning { width: 200px; }
 .land-table col.col-area { width: 100px; }
 .land-table col.col-owner { width: 140px; }
 .land-table col.col-house { width: 200px; }
@@ -130,6 +131,10 @@ select:focus { border-color: #555555; }
 .share-fields { white-space: nowrap; }
 .land-table input { min-width: 0; height: 36px; padding: 0 5px; border-color: transparent; border-radius: 3px; background: transparent; font-size: 12px; }
 .land-table input:focus { border-color: #777777; background: #ffffff; }
+.land-table .zoning-cell { min-width: 180px; }
+.land-table .zoning-cell textarea { width: 100%; min-width: 170px; min-height: 48px; max-height: 96px; padding: 7px 8px; border-color: transparent; border-radius: 3px; background: transparent; font-size: 12px; line-height: 1.55; text-align: left; }
+.land-table .zoning-cell textarea:focus { border-color: #777777; background: #ffffff; }
+.table-cell-hint { display: block; margin-top: 4px; color: var(--ui-text-secondary); font-size: 10px; line-height: 1.5; text-align: left; }
 .land-table select { min-width: 92px; height: 36px; padding: 0 5px; overflow: hidden; border-color: transparent; border-radius: 3px; background: transparent; font-size: 12px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .land-table select:focus { border-color: #777777; background: #ffffff; }
 .land-table td input { text-align: center; }
@@ -185,6 +190,8 @@ select:focus { border-color: #555555; }
 .custom-note-item { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--ui-border); border-radius: 8px; }
 .custom-note-actions { display: flex; justify-content: flex-end; }
 .nested-options { margin-left: 28px; }
+.nested-options > .settings-description { margin: 0; }
+.nested-options > .btn { width: fit-content; min-height: 38px; padding: 0 14px; font-size: 12px; }
 .nested-options.is-hidden { display: none; }
 .nested-options[hidden] { display: none; }
 .check-option { display: flex; width: fit-content; align-items: center; gap: 10px; color: #333333; font-size: 13px; font-weight: 400; cursor: pointer; }

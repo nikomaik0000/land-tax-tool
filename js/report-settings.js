@@ -12,6 +12,7 @@ export function createDefaultReportConfiguration() {
       tableSpacing: "relaxed",
       sectionSpacing: "relaxed",
       fontSize: "medium",
+      showLandZoning: false,
       showSelfUseTax: true,
       showTaxSummary: true,
       taxSummaryItems: { selfUseTax: true, generalTax: true, deedTax: true, giftTax: false }
@@ -39,7 +40,7 @@ function checked(value) { return value ? " checked" : ""; }
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const createNoteId = () => globalThis.crypto?.randomUUID ? `note-${globalThis.crypto.randomUUID()}` : `note-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-export function createReportSettings({ container, state, onChange = () => {} }) {
+export function createReportSettings({ container, state, onChange = () => {}, onRequeryZoning = () => {} }) {
   const id = `report-settings-${++settingsInstance}`;
   const radio = (name, value, label) => `<label class="radio-option"><input type="radio" name="${id}-${name}" data-option="${name}" value="${value}"${checked(state.displayOptions[name] === value)}><span>${label}</span></label>`;
   container.innerHTML = `<div class="settings-accordion">
@@ -50,7 +51,14 @@ export function createReportSettings({ container, state, onChange = () => {} }) 
       <p class="settings-description">選擇要呈現在客戶版試算表中的欄位與說明。</p>
       <div class="settings-list">
         <div class="settings-group"><h3>列印方向</h3><div class="option-row">${radio("orientation", "portrait", "直式 Portrait")}${radio("orientation", "landscape", "橫式 Landscape")}</div></div>
-        <div class="settings-group"><h3>主表欄位</h3><label class="check-option"><input data-toggle="showSelfUseTax" type="checkbox"${checked(state.displayOptions.showSelfUseTax)}><span>顯示自用增值稅</span></label></div>
+        <div class="settings-group"><h3>主表欄位</h3>
+          <label class="check-option"><input data-toggle="showSelfUseTax" type="checkbox"${checked(state.displayOptions.showSelfUseTax)}><span>顯示自用增值稅</span></label>
+          <label class="check-option"><input data-toggle="showLandZoning" type="checkbox"${checked(state.displayOptions.showLandZoning)}><span>帶入土地使用分區</span></label>
+          <div class="nested-options" data-zoning-options${state.displayOptions.showLandZoning ? "" : " hidden"}>
+            <p class="settings-description">目前自動查詢支援臺北市，資料來源為臺北市政府都市發展局。</p>
+            <button class="btn btn-secondary" data-requery-zoning type="button">重新查詢使用分區</button>
+          </div>
+        </div>
         <div class="settings-group"><h3>贈與稅試算</h3>
           <label class="check-option"><input data-toggle="giftTax" type="checkbox"${checked(state.giftTax.enabled)}><span>啟用贈與稅試算</span></label>
           <div class="gift-tax-fields" data-gift-fields${state.giftTax.enabled ? "" : " hidden"}>
@@ -94,6 +102,7 @@ export function createReportSettings({ container, state, onChange = () => {} }) 
     content.hidden = !state.settingsExpanded;
     container.querySelector("[data-gift-fields]").hidden = !state.giftTax.enabled;
     container.querySelector("[data-summary-options]").hidden = !state.displayOptions.showTaxSummary;
+    container.querySelector("[data-zoning-options]").hidden = !state.displayOptions.showLandZoning;
     const selfSummary = container.querySelector('[data-summary-item][value="selfUseTax"]');
     selfSummary.disabled = !state.displayOptions.showSelfUseTax;
     if (!state.displayOptions.showSelfUseTax) selfSummary.checked = false;
@@ -114,6 +123,7 @@ export function createReportSettings({ container, state, onChange = () => {} }) 
       if (!input.checked) state.displayOptions.taxSummaryItems.selfUseTax = false;
     }
     if (input.dataset.toggle === "showTaxSummary") state.displayOptions.showTaxSummary = input.checked;
+    if (input.dataset.toggle === "showLandZoning") state.displayOptions.showLandZoning = input.checked;
     if (input.dataset.toggle === "showCaseTotal") state.displayOptions.showCaseTotal = input.checked;
     if (input.dataset.toggle === "giftTax") {
       state.giftTax.enabled = input.checked;
@@ -128,6 +138,7 @@ export function createReportSettings({ container, state, onChange = () => {} }) 
     changed();
   });
   container.addEventListener("click", (event) => {
+    if (event.target.matches("[data-requery-zoning]")) { onRequeryZoning(); return; }
     if (event.target.matches("[data-add-custom-note]")) {
       state.customNotes ??= []; state.customNotes.push({ id: createNoteId(), enabled: true, title: "", content: "" }); renderCustomNotes(); onChange(); return;
     }

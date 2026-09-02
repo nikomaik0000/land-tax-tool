@@ -24,3 +24,12 @@
 - `*.csv`：與新北相同的八欄 normalized schema，按 12 行政區拆分
 
 臺北與新北由同一支 updater 處理，但各自使用 staging directory 原子替換；單一城市失敗不會覆蓋另一城市既有 production data。
+
+## 臺北市土地使用分區
+
+- 目錄：`material/zoning/taipei/`
+- 來源：臺北市資料大平臺「臺北市土地使用分區」完整 CSV
+- `manifest.json`：來源、更新頻率、原始筆數、12 行政區檔案與 SHA-256
+- `*.csv`：`區／大段／小段／母號／子號 → 分區說明`，按行政區 lazy-load
+
+請使用 `scripts/update_zoning.py` 重建。腳本先在 staging 驗證欄位、總筆數、12 區完整性及相對舊版筆數，再原子替換；下載或驗證失敗不覆蓋 production bundled data。新北都市計畫 polygon 與臺北文字資料使用不同 source parser。

@@ -21,10 +21,13 @@ const compactHouseLabel = (house, index) => { const address = String(house.addre
 
 function basicLandCells(land, rowSpan) {
   const span = ` rowspan="${rowSpan}"`;
+  const zoning = state.displayOptions.showLandZoning
+    ? `<td class="land-basic-cell zoning-cell"${span}><textarea data-field="zoning" aria-label="使用分區" rows="2">${escapeHtml(land.zoning)}</textarea>${land.zoningStatus === "unsupported" ? '<span class="table-cell-hint">新北市尚未支援自動查詢</span>' : ""}</td>`
+    : "";
   return `<td class="land-basic-cell district-cell"${span}>${input("district", land.district, "區")}</td>
     <td class="land-basic-cell section-cell"${span}>${input("section", land.section, "段")}</td>
     <td class="land-basic-cell subsection-cell"${span}>${input("subsection", land.subsection, "小段")}</td>
-    <td class="land-basic-cell"${span}>${input("landNumber", land.landNumber, "地號", false, "land-number")}</td>
+    <td class="land-basic-cell"${span}>${input("landNumber", land.landNumber, "地號", false, "land-number")}</td>${zoning}
     <td class="land-basic-cell"${span}>${input("area", land.area || "", "面積", true, "area")}</td>
     <td class="land-basic-cell"${span}>${relationshipSelect("ownerId", land.ownerId, state.owners.map((owner) => ({ value: owner.id, label: owner.name || "（未命名）" })), "所有權人")}</td>
     <td class="land-basic-cell"${span}>${relationshipSelect("houseId", land.houseId, [{ value: "", label: "無房屋" }, ...state.houses.map((house, index) => ({ value: house.id, label: compactHouseLabel(house, index), title: house.address }))], "對應房屋")}</td>

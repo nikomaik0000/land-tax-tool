@@ -1,14 +1,17 @@
 import { createEmptyLand, createId, LAND_TAX_STORAGE_KEY, state } from "./state.js";
 import { clearSessionState, saveSessionState } from "./session-state.js";
 import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260902-1";
-import { renderFiles, renderLandTable } from "./report-renderer.js?v=20260820-2";
+import { renderFiles, renderLandTable } from "./report-renderer.js?v=20260902-2";
 import { formatArea, formatLandNumber, formatMoney, parseFormattedNumber } from "./formatters.js?v=20260819-25";
 import { calculateCaseCurrentValue, calculateGiftTax, calculateHouseCurrentValue, calculateHouseOwnerDeedTax, calculateLandCurrentValue, calculateTotalDeedTax, calculateTotalHouseCurrentValue, calculateTotalLandCurrentValue, calculateTransferTaxTotals } from "./calculations.js";
-import { renderA4Report } from "./a4-report-renderer.js?v=20260819-25";
-import { exportExcel } from "./excel-export.js?v=20260819-26";
+import { renderA4Report } from "./a4-report-renderer.js?v=20260902-2";
+import { exportExcel } from "./excel-export.js?v=20260902-2";
 import { createReportSettings } from "./report-settings.js";
 import { createHouse, ensureOwner, hasEffectiveHouseData, houseLabel, ownerName } from "./relationships.js";
 import { orderLandsByDocuments, sortDocumentsByLand } from "./document-order.js";
+import { normalizeCity } from "./land-value-normalization.js";
+import { lookupZoningRecords } from "./zoning-source.js";
+import { applyLandZoningResults, setManualLandZoning } from "./land-zoning.js";
 
 const $ = (selector) => document.querySelector(selector);
 const elements = {
@@ -30,6 +33,8 @@ const landCalculationFields = new Set(["area", "announcedValue", "shareNumerator
 let settingsController;
 let clearingPageState = false;
 let restoredManualLandPrefix = [];
+let zoningLookupTimer;
+let zoningLookupGeneration = 0;
 
 function savePageState() {
   if (clearingPageState) return;
@@ -136,9 +141,34 @@ function refresh() {
   renderHouses();
   renderFiles(elements.fileList);
   renderLandTable(elements.landRows, elements.tableWrap, elements.tableEmpty);
+  document.querySelectorAll("[data-zoning-column]").forEach((element) => { element.hidden = !state.displayOptions.showLandZoning; });
   elements.reparseFiles.disabled = state.files.length === 0;
   elements.sortFilesByLand.disabled = state.files.length < 2;
   recalculateSummary();
+}
+
+async function lookupLandZoning({ includeManual = false } = {}) {
+  if (!state.displayOptions.showLandZoning) return;
+  const candidates = state.lands.filter((land) => includeManual || !land.zoningManual);
+  if (!candidates.length) return;
+  const generation = ++zoningLookupGeneration;
+  candidates.forEach((land) => { land.zoningStatus = normalizeCity(land.city) === "新北市" ? "unsupported" : "pending"; });
+  try {
+    const results = await lookupZoningRecords(candidates.map((land) => ({ ...land, matches: [] })));
+    if (generation !== zoningLookupGeneration || !state.displayOptions.showLandZoning) return;
+    applyLandZoningResults(candidates, results, { overwriteManual: includeManual });
+    refresh();
+  } catch (error) {
+    if (generation !== zoningLookupGeneration) return;
+    candidates.forEach((land) => { if (!land.zoningManual) land.zoningStatus = "error"; });
+    savePageState();
+    console.error(error);
+  }
+}
+
+function scheduleLandZoningLookup() {
+  clearTimeout(zoningLookupTimer);
+  zoningLookupTimer = setTimeout(() => lookupLandZoning(), 400);
 }
 
 function applyCurrentDocumentOrder(mode = state.documentOrderMode) {
@@ -194,6 +224,7 @@ async function parseAll(filterStatus = null) {
     restoredManualLandPrefix = [];
   }
   refresh();
+  if (state.displayOptions.showLandZoning) await lookupLandZoning();
 }
 
 elements.pdfFiles.addEventListener("change", (event) => { addFiles(event.target.files); event.target.value = ""; });
@@ -295,6 +326,13 @@ elements.landRows.addEventListener("input", (event) => {
   if (event.target.dataset.field) {
     const field = event.target.dataset.field;
     land[field] = numericFields.has(field) ? parseNumber(event.target.value) : (field === "houseId" ? event.target.value || null : event.target.value);
+    if (field === "zoning") {
+      setManualLandZoning(land, event.target.value);
+    }
+    if (["district", "section", "subsection", "landNumber"].includes(field) && state.displayOptions.showLandZoning && !land.zoningManual) {
+      land.zoningStatus = "stale";
+      scheduleLandZoningLookup();
+    }
     if (field === "ownerId") land.owner = ownerName(state, land.ownerId);
     if (landCalculationFields.has(field)) recalculateLand(land, row);
     else { renderRelationshipWarnings(); recalculateSummary(); }
@@ -360,7 +398,18 @@ elements.houseList.addEventListener("click", (event) => {
   refresh(); if (affected) window.alert("原對應土地已改為無房屋。");
 });
 
-settingsController = createReportSettings({ container: elements.reportSettings, state, onChange: () => { renderPreview(); savePageState(); } });
+let previousShowLandZoning = state.displayOptions.showLandZoning;
+settingsController = createReportSettings({
+  container: elements.reportSettings,
+  state,
+  onChange: () => {
+    const changed = previousShowLandZoning !== state.displayOptions.showLandZoning;
+    previousShowLandZoning = state.displayOptions.showLandZoning;
+    refresh();
+    if (changed && state.displayOptions.showLandZoning) lookupLandZoning();
+  },
+  onRequeryZoning: () => lookupLandZoning()
+});
 
 elements.clearPageState.addEventListener("click", () => {
   if (!window.confirm("確定清除土地增值稅試算頁目前資料？其他功能頁不受影響。")) return;
@@ -407,4 +456,5 @@ new ResizeObserver(updatePreviewScale).observe(elements.reportPreview);
 
 elements.caseName.value = state.caseName;
 refresh();
+if (state.displayOptions.showLandZoning) lookupLandZoning();
 updatePreviewScale();

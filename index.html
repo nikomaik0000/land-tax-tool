@@ -7,8 +7,8 @@
   <link rel="icon" href="./icon/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="css/style.css?v=20260821-5">
-  <link rel="stylesheet" href="css/print.css?v=20260821-5">
+  <link rel="stylesheet" href="css/style.css?v=20260902-2">
+  <link rel="stylesheet" href="css/print.css?v=20260902-2">
 </head>
 <body>
   <main class="app-container">
@@ -20,6 +20,7 @@
         <a href="transcript.html">謄本整理</a>
         <a href="land-value-update.html">公告現值更新</a>
         <a href="land-number-converter.html">新舊地號查詢</a>
+        <a href="zoning.html">使用分區查詢</a>
       </nav>
     </header>
 
@@ -76,13 +77,14 @@
         <table class="land-table">
           <colgroup>
             <col class="col-district"><col class="col-section"><col class="col-subsection"><col class="col-land-number">
+            <col class="col-zoning" data-zoning-column hidden>
             <col class="col-area"><col class="col-owner"><col class="col-house"><col class="col-announced"><col class="col-share">
             <col class="col-current"><col class="col-transfer-date"><col class="col-transfer-value"><col class="col-index">
             <col class="col-tax"><col class="col-tax"><col class="col-action">
           </colgroup>
           <thead>
             <tr>
-              <th>區</th><th>段</th><th>小段</th><th>地號</th><th class="numeric">面積</th>
+              <th>區</th><th>段</th><th>小段</th><th>地號</th><th data-zoning-column hidden>使用分區</th><th class="numeric">面積</th>
               <th>所有權人</th><th>對應房屋</th><th class="numeric">公告現值</th><th>持分</th><th class="numeric">總現值</th>
               <th>前次移轉日期</th><th class="numeric">前次移轉現值</th><th class="numeric">物價指數</th>
               <th class="numeric">自用增值稅</th><th class="numeric">一般增值稅</th><th>操作</th>
@@ -125,6 +127,6 @@
   </main>
 
   <style id="dynamicPrintPage">@page { size: A4 landscape; margin: 8mm; }</style>
-  <script src="js/app.js?v=20260902-1" type="module"></script>
+  <script src="js/app.js?v=20260902-2" type="module"></script>
 </body>
 </html>

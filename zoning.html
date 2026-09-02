@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>土地使用分區批次查詢</title>
+  <link rel="icon" href="./icon/favicon.svg" type="image/svg+xml"><link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="css/style.css?v=20260902-1"><link rel="stylesheet" href="css/land-value-update.css?v=20260902-1"><link rel="stylesheet" href="css/land-number-converter.css?v=20260902-1">
+</head>
+<body><main class="app-container">
+  <header class="site-header"><p class="eyebrow">LAND ZONING TOOL</p><h1>土地使用分區批次查詢</h1>
+    <nav class="tool-nav" aria-label="功能切換"><a href="index.html">增值稅試算</a><a href="transcript.html">謄本整理</a><a href="land-value-update.html">公告現值更新</a><a href="land-number-converter.html">新舊地號查詢</a><a class="is-active" href="zoning.html" aria-current="page">使用分區查詢</a></nav>
+  </header>
+  <section class="section" aria-labelledby="zoning-source-title"><div class="section-heading"><h2 id="zoning-source-title">使用分區資料</h2><p id="zoningSourceSummary">正在讀取臺北市資料清單…</p></div>
+    <div class="source-accordion">
+      <button id="zoningSourceAccordion" class="source-accordion-header" type="button" aria-expanded="false" aria-controls="zoningSourceContent"><span class="settings-accordion-arrow" aria-hidden="true">›</span><span>資料來源</span></button>
+      <div id="zoningSourceContent" class="source-accordion-content converter-source-content" hidden>
+        <div class="converter-source-cities">
+          <article class="converter-source-city"><strong>臺北市</strong><span id="taipeiZoningDate">資料更新：讀取中…</span><span>官方資料依臺北市政府都市發展局提供。</span></article>
+          <article class="converter-source-city"><strong>新北市</strong><span>尚未支援完整地號查詢。</span><span>目前官方為 GIS polygon 資料，尚缺可合法批次使用的完整地籍 geometry。</span></article>
+        </div>
+        <div class="source-actions"><a class="btn btn-secondary" href="https://data.taipei/dataset/detail?id=a132a433-db7c-4387-8085-83e6a093b17f" target="_blank" rel="noopener noreferrer">臺北官方資料</a><a class="btn btn-secondary" href="https://data.ntpc.gov.tw/datasets/fe26e0a5-54c2-4876-bbc7-150243c048f5" target="_blank" rel="noopener noreferrer">新北官方圖資</a></div>
+      </div>
+    </div>
+    <p class="converter-footnote">臺北市已支援完整地號查詢；新北市目前尚未支援完整地號批次查詢。</p>
+  </section>
+  <section class="section"><div class="section-heading"><h2>土地資料 Excel</h2><p>欄位：縣市、區、段、小段、地號；同一檔可混合兩市。沒有縣市欄時使用下方城市。</p></div>
+    <div class="form-grid"><label class="field"><span>查詢城市（Excel 沒有縣市欄時）</span><select id="fallbackCity"><option>臺北市</option><option>新北市</option></select></label></div>
+    <div id="zoningDropZone" class="upload-zone" tabindex="0"><p class="upload-title">選擇土地資料 Excel</p><p>可點擊選擇，亦可將 .xls / .xlsx 拖曳至此</p><label class="btn btn-primary file-picker" for="zoningFile">選擇檔案</label><input id="zoningFile" class="visually-hidden" type="file" accept=".xls,.xlsx"></div><div id="zoningFileList" class="file-list"></div>
+  </section>
+  <section class="section"><div class="section-heading"><h2>使用分區查詢結果</h2><p id="zoningResultSummary">尚未載入土地資料 Excel。</p></div><p id="zoningEmpty" class="empty-state">請先上傳土地資料 Excel。</p>
+    <div id="zoningResultWrap" class="table-scroll converter-table-scroll" hidden><table class="land-table converter-table"><thead><tr><th>縣市</th><th>區</th><th>段</th><th>小段</th><th>地號</th><th>土地類型</th><th>使用分區</th><th>使用地類別</th><th>查詢狀態</th></tr></thead><tbody id="zoningRows"></tbody></table></div>
+    <p id="zoningMessage" class="validation-message" hidden></p><p class="converter-footnote">開放資料查詢結果僅供參考；實施依據仍以主管機關公告及依法申請之證明為準。</p>
+    <div class="actions result-actions"><button id="clearZoning" class="btn btn-secondary" type="button">清除目前資料</button><button id="downloadZoning" class="btn btn-primary" type="button" disabled>下載查詢結果 Excel</button></div>
+  </section>
+</main><script src="js/zoning-app.js?v=20260902-2" type="module"></script></body></html>

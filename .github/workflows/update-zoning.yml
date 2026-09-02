@@ -1,0 +1,45 @@
+name: Update Taipei zoning data
+
+on:
+  schedule:
+    - cron: "47 2 15 1,7 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-zoning-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download, validate, and build Taipei zoning data
+        id: update
+        continue-on-error: true
+        run: python scripts/update_zoning.py
+      - name: Commit changed bundled data
+        shell: bash
+        run: |
+          git add material/zoning/taipei
+          if git diff --cached --quiet; then
+            echo "Taipei zoning data is unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: update Taipei zoning data"
+          git push origin HEAD:main
+      - name: Report source or validation failure
+        if: steps.update.outcome == 'failure'
+        run: exit 1

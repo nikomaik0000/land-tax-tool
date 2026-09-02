@@ -45,6 +45,7 @@
 .a4-land-table .report-money { padding-right: 8px; color: var(--print-black); text-align: right; white-space: nowrap; }
 .a4-land-table .report-current-value { font-weight: 600; }
 .a4-land-table .report-house-row td { border-top: 1.5px solid var(--print-black); }
+.a4-land-table .report-zoning-row td { padding-top: 4px; padding-bottom: 4px; color: var(--print-dark); font-size: 0.9em; text-align: left; }
 .a4-land-table .report-house-address { text-align: left; }
 .a4-land-table .report-house-share { text-align: center; white-space: nowrap; }
 .a4-land-table .report-total-row td { color: var(--print-black); font-weight: 600; border-top: 2px solid var(--print-black); }

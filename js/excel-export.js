@@ -41,12 +41,13 @@ function fontConfig(value) {
   return ({ small: { body: 9, title: 16 }, medium: { body: 10.5, title: 17 }, large: { body: 12, title: 18 } })[value] ?? { body: 10.5, title: 17 };
 }
 
-function mainColumns(showSelfUseTax) {
+function mainColumns(showSelfUseTax, showLandZoning = false) {
   return [
     { key: "district", header: "區", width: 7, align: "center" },
     { key: "section", header: "段", width: 8, align: "center" },
     { key: "subsection", header: "小段", width: 8, align: "center" },
     { key: "landNumber", header: "地號", width: 10, align: "center" },
+    ...(showLandZoning ? [{ key: "zoning", header: "使用分區", width: 24, align: "left" }] : []),
     { key: "area", header: "面積", width: 12, align: "center", format: AREA_FORMAT },
     { key: "owner", header: "所有\n權人", width: 12, align: "center" },
     { key: "announcedValue", header: "公告\n現值", width: 13, align: "right", format: MONEY_FORMAT },
@@ -93,7 +94,7 @@ function addSectionTitle(sheet, row, title, totalColumns, fontSize, height) {
 }
 
 function writeMainTable(sheet, startRow, state, totals, styles) {
-  const columns = mainColumns(state.displayOptions.showSelfUseTax);
+  const columns = mainColumns(state.displayOptions.showSelfUseTax, state.displayOptions.showLandZoning);
   columns.forEach((column, index) => { sheet.getColumn(index + 1).width = column.width; });
   const headerRow = startRow;
   columns.forEach((column, index) => { sheet.getCell(headerRow, index + 1).value = column.header; });
@@ -118,7 +119,7 @@ function writeMainTable(sheet, startRow, state, totals, styles) {
     const firstRow = row; const lastRow = row + transfers.length - 1;
     const basicValues = {
       district: land.district || null, section: land.section || null, subsection: land.subsection || null,
-      landNumber: formatLandNumber(land.landNumber), area: numericOrNull(land.area), owner: ownerName(state, land.ownerId, land.owner),
+      landNumber: formatLandNumber(land.landNumber), zoning: land.zoning || null, area: numericOrNull(land.area), owner: ownerName(state, land.ownerId, land.owner),
       announcedValue: numericOrNull(land.announcedValue), share: shareText(land.shareNumerator, land.shareDenominator),
       currentValue: numericOrNull(land.currentValue)
     };
@@ -315,7 +316,7 @@ export async function buildExcelWorkbook(state, totals, ExcelJS = globalThis.Exc
   const workbook = new ExcelJS.Workbook(); workbook.creator = "土地及房屋稅費試算"; workbook.created = new Date();
   const sheet = workbook.addWorksheet("試算表", { views: [{ showGridLines: false }] });
   const styles = { spacing: spacingConfig(state.displayOptions.tableSpacing), font: fontConfig(state.displayOptions.fontSize) };
-  const columns = mainColumns(state.displayOptions.showSelfUseTax);
+  const columns = mainColumns(state.displayOptions.showSelfUseTax, state.displayOptions.showLandZoning);
   const giftColumnCount = state.giftTax.enabled && state.giftTax.result ? giftItems(state).length : 0;
   const totalColumns = Math.max(columns.length, giftColumnCount, 3);
   sheet.mergeCells(1, 1, 1, totalColumns);

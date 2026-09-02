@@ -9,15 +9,15 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character
 
 const fraction = (numerator, denominator) => `${Number(numerator) || 0} / ${Number(denominator) || 0}`;
 
-export function getReportRowCount(lands) {
+export function getReportRowCount(lands, showLandZoning = false) {
   return (Array.isArray(lands) ? lands : []).reduce(
-    (count, land) => count + Math.max(1, land.previousTransfers?.length ?? 0),
+    (count, land) => count + Math.max(1, land.previousTransfers?.length ?? 0) + (showLandZoning && String(land.zoning ?? "").trim() ? 1 : 0),
     0
   );
 }
 
 export function getReportDensity(state) {
-  const rowCount = getReportRowCount(state.lands);
+  const rowCount = getReportRowCount(state.lands, state.displayOptions.showLandZoning);
   const clauseCount = state.selectedClauses.length + (state.customNotes ?? []).filter((note) => note.enabled !== false && String(note.content ?? "").trim()).length;
   const score = rowCount + clauseCount * 1.5 + (state.displayOptions.showTaxSummary ? 0.5 : 0) + (state.giftTax?.enabled ? 5 : 0);
   const density = score <= 5 ? "normal" : score <= 10 ? "compact" : "dense";
@@ -50,10 +50,13 @@ function transferCells(transfer, showSelfUseTax) {
 
 function singleLandRows(state, land) {
     const transfers = land.previousTransfers.length ? land.previousTransfers : [null];
-    return transfers.map((transfer, index) => `<tr>
+    const rows = transfers.map((transfer, index) => `<tr>
       ${index === 0 ? basicCells(state, land, transfers.length) : ""}
       ${transferCells(transfer, state.displayOptions.showSelfUseTax)}
     </tr>`).join("");
+    const zoning = state.displayOptions.showLandZoning ? String(land.zoning ?? "").trim() : "";
+    const columnCount = state.displayOptions.showSelfUseTax ? 14 : 13;
+    return rows + (zoning ? `<tr class="report-zoning-row"><td colspan="${columnCount}">使用分區：${escapeHtml(zoning)}</td></tr>` : "");
 }
 
 function houseRow(state, house) {
