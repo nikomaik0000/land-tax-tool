@@ -136,20 +136,18 @@
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   html,
   body { margin: 0; padding: 0; background: var(--print-white); }
-  body.print-portrait { width: 210mm; }
-  body.print-landscape { width: 297mm; }
   .site-header,
   .section:not(.preview-section),
   .preview-heading,
   .report-warning { display: none !important; }
   .app-container { max-width: none; margin: 0; padding: 0; }
   .preview-section { margin: 0; }
-  .report-preview { width: auto; padding: 0; overflow: visible; background: var(--print-white); }
-  .a4-preview-viewport { width: auto !important; height: auto !important; margin: 0; }
+  .report-preview { width: 100%; margin: 0; padding: 0; overflow: visible; background: var(--print-white); }
+  .a4-preview-viewport { width: 100% !important; height: auto !important; margin: 0 auto; }
   .a4-sheet {
-    padding: 0; overflow: visible; transform: none !important;
+    margin-left: auto; margin-right: auto; padding: 0; overflow: visible; transform: none !important;
     background: var(--print-white); box-shadow: none !important;
   }
-  .a4-sheet.orientation-portrait { width: 194mm; min-height: 281mm; }
-  .a4-sheet.orientation-landscape { width: 281mm; min-height: 194mm; }
+  .a4-sheet.orientation-portrait { width: 194mm; max-width: 194mm; min-height: 281mm; }
+  .a4-sheet.orientation-landscape { width: 281mm; max-width: 281mm; min-height: 194mm; }
 }

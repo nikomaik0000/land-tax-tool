@@ -1,7 +1,7 @@
 import { clauses } from "./clauses.js?v=20260818-9";
 import { formatLandNumber } from "./formatters.js?v=20260819-25";
 import { calculateTaxSummaryByOwner, calculateTotalDeedTax } from "./calculations.js";
-import { ownerName } from "./relationships.js";
+import { hasEffectiveHouseData, ownerName } from "./relationships.js";
 
 const EXCELJS_URL = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
 const COLORS = { black: "FF000000", dark: "FF333333", line: "FF999999", white: "FFFFFFFF" };
@@ -234,7 +234,7 @@ function taxSummaryItems(state, totals) {
   return [
     ...(state.displayOptions.showSelfUseTax && selected.selfUseTax ? [{ label: "自用增值稅", value: totals.selfUseTax }] : []),
     ...(selected.generalTax ? [{ label: "一般增值稅", value: totals.generalTax }] : []),
-    ...(selected.deedTax ? [{ label: "契稅", value: calculateTotalDeedTax(state.houses) }] : []),
+    ...(selected.deedTax && hasEffectiveHouseData(state) ? [{ label: "契稅", value: calculateTotalDeedTax(state.houses) }] : []),
     ...(state.giftTax.enabled && selected.giftTax && state.giftTax.result ? [{ label: "贈與稅", value: state.giftTax.result.finalGiftTax }] : [])
   ];
 }
@@ -258,7 +258,7 @@ function writeTaxSummary(sheet, startRow, state, totals, totalColumns, styles) {
   const groups = calculateTaxSummaryByOwner(state);
   if (groups.length <= 1) { writeItems(items); return row; }
   const selected = state.displayOptions.taxSummaryItems;
-  const columns = [...(state.displayOptions.showSelfUseTax && selected.selfUseTax ? [{ key: "selfUseTax", label: "自用增值稅", total: totals.selfUseTax }] : []), ...(selected.generalTax ? [{ key: "generalTax", label: "一般增值稅", total: totals.generalTax }] : []), ...(selected.deedTax ? [{ key: "deedTax", label: "契稅", total: calculateTotalDeedTax(state.houses) }] : [])];
+  const columns = [...(state.displayOptions.showSelfUseTax && selected.selfUseTax ? [{ key: "selfUseTax", label: "自用增值稅", total: totals.selfUseTax }] : []), ...(selected.generalTax ? [{ key: "generalTax", label: "一般增值稅", total: totals.generalTax }] : []), ...(selected.deedTax && hasEffectiveHouseData(state) ? [{ key: "deedTax", label: "契稅", total: calculateTotalDeedTax(state.houses) }] : [])];
   if (columns.length) {
     const logicalColumns = columns.length + 1; const headerRow = row; const spans = [];
     for (let index = 0; index < logicalColumns; index += 1) { const from = Math.floor(index * totalColumns / logicalColumns) + 1; const to = Math.floor((index + 1) * totalColumns / logicalColumns); spans.push({ from, to }); if (to > from) sheet.mergeCells(row, from, row, to); }

@@ -1,4 +1,4 @@
-import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260819-25";
+import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260902-1";
 import { formatLandNumber } from "./formatters.js?v=20260819-25";
 
 const files = document.querySelector("#files");

@@ -141,6 +141,30 @@ function fieldCandidates(field, items, options = {}) {
   return aliasFragments(items, FIELD_ALIASES[field] ?? []).map((label) => ({ label, value: findNearestValue(label, items, { ...options, maxDistance: options.maxDistance ?? 420, debugLabel: field }), score: anchorDistance(label, items) })).filter((entry) => entry.value).sort((a, b) => a.score - b.score);
 }
 
+const TAIPEI_DISTRICT_NAMES = Object.freeze(["中正", "大同", "中山", "松山", "大安", "萬華", "信義", "士林", "北投", "內湖", "南港", "文山"]);
+const TAIPEI_CITY_DISTRICT_PATTERN = /(?:臺北市|台北市)\s*[（(]\s*\d{1,2}\s*[）)]\s*(中正|大同|中山|松山|大安|萬華|信義|士林|北投|內湖|南港|文山)區/;
+
+function parseTaipeiLocation(rows, items) {
+  const direct = rows.map((row) => normalizeText(row.text).match(TAIPEI_CITY_DISTRICT_PATTERN)?.[1]).find(Boolean);
+  if (direct) return { city: "臺北市", district: direct };
+
+  const cityAnchors = items.filter((item) => /(?:臺北市|台北市)/.test(normalizeText(item.text)));
+  for (const anchor of cityAnchors) {
+    const nearbyText = items
+      .filter((item) => item.page === anchor.page && Math.abs(item.y - anchor.y) <= 12 && item.x >= anchor.x - 8 && item.x <= anchor.x + 360)
+      .sort((a, b) => a.x - b.x)
+      .map((item) => item.text)
+      .join("");
+    const combined = normalizeText(nearbyText);
+    const matched = combined.match(TAIPEI_CITY_DISTRICT_PATTERN)?.[1];
+    if (matched) return { city: "臺北市", district: matched };
+
+    const fallback = TAIPEI_DISTRICT_NAMES.find((district) => combined.includes(`${district}區`));
+    if (fallback) return { city: "臺北市", district: fallback };
+  }
+  return { city: "", district: "" };
+}
+
 function parseDistrict(rows, items) {
   const direct = aliasFragments(items, FIELD_ALIASES.district).map((label) => findNearestValue(label, items, { sameRowRight: false, sameColumnBelow: true, textOnly: true, maxDistance: 100 })).map((item) => item?.text).find((text) => /區/.test(normalizeText(text)));
   const fallback = rows.map((row) => row.normalizedText.match(/(?:臺北市|台北市|新北市)?(?:\(\d+\))?([^\d()[\]]{1,5}區)/)?.[1]).find((value) => value && !["行政區", "政區"].includes(value));
@@ -148,6 +172,7 @@ function parseDistrict(rows, items) {
 }
 
 function parseIdentity(rows, items) {
+  const taipeiLocation = parseTaipeiLocation(rows, items);
   const codedSection = rows.map((row) => row.normalizedText.match(/(?:\(\d+\)|\[\d+\])([^\d()[\]]{1,12}段(?:[一二三四五六七八九十百]+小段)?)/)?.[1]).find(Boolean);
   const sectionBelow = aliasFragments(items, FIELD_ALIASES.section).map((label) => findNearestValue(label, items, { sameRowRight: false, sameColumnBelow: true, textOnly: true, maxDistance: 100 })).map((item) => item?.text);
   let rawSection = codedSection || sectionBelow.find((value) => {
@@ -157,7 +182,7 @@ function parseIdentity(rows, items) {
   let landNumber = fieldCandidates("landNumber", items).map((entry) => normalizeText(entry.value.text)).find((value) => /\d/.test(value)) ?? "";
   if (!landNumber) landNumber = rows.map((row) => row.normalizedText.match(/([\d-]+)地號/)?.[1]).find(Boolean) ?? "";
   const rawLandNumber = landNumber.replace(/地號$/, "");
-  return { district: parseDistrict(rows, items), ...parseSectionName(rawSection), landNumber: rawLandNumber, rawLandNumber };
+  return { city: taipeiLocation.city, district: taipeiLocation.district || parseDistrict(rows, items), ...parseSectionName(rawSection), landNumber: rawLandNumber, rawLandNumber };
 }
 
 function numericField(field, items) { return parseNumericValue(fieldCandidates(field, items, { numericOnly: true })[0]?.value.text); }
@@ -257,7 +282,7 @@ export function parseGenericLandTaxPdf(items, template = detectPdfTemplate(items
   for (const record of records) {
     const previous = merged.at(-1);
     if (previous && !record.data.landNumber) {
-      for (const field of ["district", "section", "subsection", "landNumber", "rawLandNumber", "area", "announcedValue", "shareNumerator", "shareDenominator"]) {
+      for (const field of ["city", "district", "section", "subsection", "landNumber", "rawLandNumber", "area", "announcedValue", "shareNumerator", "shareDenominator"]) {
         if ((previous.data[field] === null || previous.data[field] === "") && record.data[field] !== null && record.data[field] !== "") previous.data[field] = record.data[field];
       }
       previous.data.previousTransfers.push(...record.data.previousTransfers);

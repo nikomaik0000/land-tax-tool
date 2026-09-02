@@ -58,6 +58,11 @@ export function relatedHouses(state) {
   return (state?.houses ?? []).filter((house) => ids.has(house.id));
 }
 
+export function hasEffectiveHouseData(stateOrHouses) {
+  const houses = Array.isArray(stateOrHouses) ? stateOrHouses : stateOrHouses?.houses;
+  return (houses ?? []).some((house) => cleanName(house?.address) || Number(house?.assessedValue) > 0);
+}
+
 export function houseLabel(house, index) {
   const address = cleanName(house?.address);
   return `房屋 ${index + 1}${address ? `：${address}` : ""}`;

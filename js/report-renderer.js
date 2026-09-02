@@ -44,6 +44,9 @@ function transferCells(transfer, index) {
 
 export function renderFiles(container) {
   container.innerHTML = state.files.map((entry) => `<div class="file-row" data-file-id="${entry.id}">
+    <button class="file-drag-handle" type="button" aria-label="拖曳排序 ${escapeHtml(entry.file.name)}" title="拖曳排序">
+      <svg viewBox="0 0 12 18" aria-hidden="true"><circle cx="3" cy="3" r="1.25"/><circle cx="9" cy="3" r="1.25"/><circle cx="3" cy="9" r="1.25"/><circle cx="9" cy="9" r="1.25"/><circle cx="3" cy="15" r="1.25"/><circle cx="9" cy="15" r="1.25"/></svg>
+    </button>
     <span class="file-name">${escapeHtml(entry.file.name)}</span>
     <span class="file-status ${entry.status === "error" ? "is-error" : ""}">${escapeHtml(entry.message)}</span>
     <button class="icon-button" data-action="remove-file" type="button" aria-label="移除 ${escapeHtml(entry.file.name)}">×</button>

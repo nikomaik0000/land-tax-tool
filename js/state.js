@@ -12,6 +12,7 @@ export const state = {
   owner: "",
   owners: [], houses: [], house: { address: "", assessedValue: 0, shareNumerator: 1, shareDenominator: 1, currentValue: 0, deedTax: 0 },
   files: [],
+  documentOrderMode: "auto",
   lands: [],
   totalLandCurrentValue: 0,
   caseCurrentValue: 0,
@@ -25,6 +26,7 @@ Object.assign(state, restored, {
   giftTax: { ...reportConfiguration.giftTax, ...(restored.giftTax ?? {}) },
   selectedClauses: restored.selectedClauses ?? reportConfiguration.selectedClauses
 });
+state.documentOrderMode = restored.documentOrderMode === "manual" ? "manual" : "auto";
 migrateRelationshipState(state);
 
 export function createId() {

@@ -1,20 +1,21 @@
 import { createEmptyLand, createId, LAND_TAX_STORAGE_KEY, state } from "./state.js";
 import { clearSessionState, saveSessionState } from "./session-state.js";
-import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260819-25";
+import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260902-1";
 import { renderFiles, renderLandTable } from "./report-renderer.js?v=20260820-2";
 import { formatArea, formatLandNumber, formatMoney, parseFormattedNumber } from "./formatters.js?v=20260819-25";
 import { calculateCaseCurrentValue, calculateGiftTax, calculateHouseCurrentValue, calculateHouseOwnerDeedTax, calculateLandCurrentValue, calculateTotalDeedTax, calculateTotalHouseCurrentValue, calculateTotalLandCurrentValue, calculateTransferTaxTotals } from "./calculations.js";
 import { renderA4Report } from "./a4-report-renderer.js?v=20260819-25";
 import { exportExcel } from "./excel-export.js?v=20260819-26";
 import { createReportSettings } from "./report-settings.js";
-import { createHouse, ensureOwner, houseLabel, ownerName } from "./relationships.js";
+import { createHouse, ensureOwner, hasEffectiveHouseData, houseLabel, ownerName } from "./relationships.js";
+import { orderLandsByDocuments, sortDocumentsByLand } from "./document-order.js";
 
 const $ = (selector) => document.querySelector(selector);
 const elements = {
   caseName: $("#caseName"), owner: $("#owner"), addOwner: $("#addOwner"), ownerList: $("#ownerList"),
   addHouse: $("#addHouse"), houseList: $("#houseList"), houseCount: $("#houseCount"),
   pdfFiles: $("#pdfFiles"), uploadZone: $("#uploadZone"),
-  fileList: $("#fileList"), reparseFiles: $("#reparseFiles"), addLand: $("#addLand"),
+  fileList: $("#fileList"), reparseFiles: $("#reparseFiles"), sortFilesByLand: $("#sortFilesByLand"), addLand: $("#addLand"),
   landRows: $("#landRows"), tableWrap: $("#tableWrap"), tableEmpty: $("#tableEmpty"),
   totalLandCurrentValue: $("#totalLandCurrentValue"), summaryHouseCurrentValue: $("#summaryHouseCurrentValue"),
   caseCurrentValue: $("#caseCurrentValue"), deedTax: $("#deedTax"),
@@ -28,6 +29,7 @@ const parseNumber = parseFormattedNumber;
 const landCalculationFields = new Set(["area", "announcedValue", "shareNumerator", "shareDenominator"]);
 let settingsController;
 let clearingPageState = false;
+let restoredManualLandPrefix = [];
 
 function savePageState() {
   if (clearingPageState) return;
@@ -82,6 +84,7 @@ function recalculateSummary() {
   elements.summaryHouseCurrentValue.textContent = formatMoney(totalHouseValue);
   elements.caseCurrentValue.textContent = formatMoney(state.caseCurrentValue);
   elements.deedTax.textContent = formatMoney(totalDeedTax);
+  elements.deedTax.closest("div").hidden = !hasEffectiveHouseData(state);
   syncGiftTaxFields();
   renderPreview();
   savePageState();
@@ -134,11 +137,19 @@ function refresh() {
   renderFiles(elements.fileList);
   renderLandTable(elements.landRows, elements.tableWrap, elements.tableEmpty);
   elements.reparseFiles.disabled = state.files.length === 0;
+  elements.sortFilesByLand.disabled = state.files.length < 2;
   recalculateSummary();
+}
+
+function applyCurrentDocumentOrder(mode = state.documentOrderMode) {
+  if (mode === "auto") state.files = sortDocumentsByLand(state.files, state.lands);
+  state.lands = orderLandsByDocuments(state.lands, state.files);
+  state.documentOrderMode = mode;
 }
 
 function addFiles(files) {
   const pdfs = [...files].filter((file) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"));
+  if (state.documentOrderMode === "manual" && state.files.length === 0 && state.lands.length) restoredManualLandPrefix = state.lands.map((land) => land.id);
   for (const file of pdfs) state.files.push({ id: createId(), file, status: "queued", message: "等待讀取" });
   refresh();
   parseAll("queued");
@@ -176,6 +187,13 @@ async function parseEntry(entry) {
 
 async function parseAll(filterStatus = null) {
   for (const entry of state.files) if (!filterStatus || entry.status === filterStatus) await parseEntry(entry);
+  applyCurrentDocumentOrder();
+  if (restoredManualLandPrefix.length) {
+    const prefixIds = new Set(restoredManualLandPrefix);
+    state.lands = [...restoredManualLandPrefix.map((id) => state.lands.find((land) => land.id === id)).filter(Boolean), ...state.lands.filter((land) => !prefixIds.has(land.id))];
+    restoredManualLandPrefix = [];
+  }
+  refresh();
 }
 
 elements.pdfFiles.addEventListener("change", (event) => { addFiles(event.target.files); event.target.value = ""; });
@@ -210,7 +228,57 @@ for (const eventName of ["dragover", "drop"]) {
   });
 }
 elements.reparseFiles.addEventListener("click", () => parseAll());
+elements.sortFilesByLand.addEventListener("click", () => { applyCurrentDocumentOrder("auto"); refresh(); });
 elements.addLand.addEventListener("click", () => { state.lands.push(createEmptyLand()); refresh(); });
+
+function commitFileOrder(fileIds) {
+  const byId = new Map(state.files.map((entry) => [entry.id, entry]));
+  state.files = fileIds.map((id) => byId.get(id)).filter(Boolean);
+  applyCurrentDocumentOrder("manual");
+  refresh();
+}
+
+let fileDrag = null;
+elements.fileList.addEventListener("pointerdown", (event) => {
+  const handle = event.target.closest(".file-drag-handle");
+  const row = handle?.closest("[data-file-id]");
+  if (!handle || !row || state.files.length < 2) return;
+  event.preventDefault();
+  handle.setPointerCapture(event.pointerId);
+  fileDrag = { pointerId: event.pointerId, row };
+  row.classList.add("is-dragging");
+  elements.fileList.classList.add("is-sorting");
+});
+elements.fileList.addEventListener("pointermove", (event) => {
+  if (!fileDrag || event.pointerId !== fileDrag.pointerId) return;
+  event.preventDefault();
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-file-id]");
+  elements.fileList.querySelectorAll(".is-drop-target").forEach((row) => row.classList.remove("is-drop-target"));
+  if (!target || target === fileDrag.row || target.parentElement !== elements.fileList) return;
+  target.classList.add("is-drop-target");
+  const box = target.getBoundingClientRect();
+  elements.fileList.insertBefore(fileDrag.row, event.clientY < box.top + box.height / 2 ? target : target.nextSibling);
+});
+function finishFileDrag(event, commit = true) {
+  if (!fileDrag || event.pointerId !== fileDrag.pointerId) return;
+  const ids = [...elements.fileList.querySelectorAll("[data-file-id]")].map((row) => row.dataset.fileId);
+  fileDrag.row.classList.remove("is-dragging");
+  elements.fileList.classList.remove("is-sorting");
+  elements.fileList.querySelectorAll(".is-drop-target").forEach((row) => row.classList.remove("is-drop-target"));
+  fileDrag = null;
+  if (commit) commitFileOrder(ids); else renderFiles(elements.fileList);
+}
+elements.fileList.addEventListener("pointerup", (event) => finishFileDrag(event));
+elements.fileList.addEventListener("pointercancel", (event) => finishFileDrag(event, false));
+elements.fileList.addEventListener("keydown", (event) => {
+  if (!event.target.matches(".file-drag-handle") || !["ArrowUp", "ArrowDown"].includes(event.key)) return;
+  event.preventDefault();
+  const row = event.target.closest("[data-file-id]"); const sibling = event.key === "ArrowUp" ? row.previousElementSibling : row.nextElementSibling;
+  if (!sibling) return;
+  elements.fileList.insertBefore(row, event.key === "ArrowUp" ? sibling : sibling.nextSibling);
+  commitFileOrder([...elements.fileList.querySelectorAll("[data-file-id]")].map((item) => item.dataset.fileId));
+  elements.fileList.querySelector(`[data-file-id="${row.dataset.fileId}"] .file-drag-handle`)?.focus();
+});
 
 elements.fileList.addEventListener("click", (event) => {
   if (!event.target.matches('[data-action="remove-file"]')) return;

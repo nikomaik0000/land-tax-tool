@@ -1,7 +1,7 @@
 import { clauses } from "./clauses.js?v=20260818-9";
 import { calculateGiftTax, calculateTaxSummaryByOwner, calculateTotalDeedTax, calculateTransferTaxTotals } from "./calculations.js";
 import { formatArea, formatLandNumber, formatMoney } from "./formatters.js?v=20260819-25";
-import { ownerName } from "./relationships.js";
+import { hasEffectiveHouseData, ownerName } from "./relationships.js";
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -91,7 +91,7 @@ function taxSummaryItems(state, totals, giftResult) {
   return [
     ...(state.displayOptions.showSelfUseTax && selected.selfUseTax ? [{ label: "自用增值稅", value: totals.selfUseTax }] : []),
     ...(selected.generalTax ? [{ label: "一般增值稅", value: totals.generalTax }] : []),
-    ...(selected.deedTax ? [{ label: "契稅", value: calculateTotalDeedTax(state.houses) }] : []),
+    ...(selected.deedTax && hasEffectiveHouseData(state) ? [{ label: "契稅", value: calculateTotalDeedTax(state.houses) }] : []),
     ...(state.giftTax?.enabled && selected.giftTax && giftResult ? [{ label: "贈與稅", value: giftResult.finalGiftTax }] : [])
   ];
 }
@@ -106,7 +106,7 @@ function taxSummaryMarkup(state, totals, giftResult) {
   const columns = [
     ...(state.displayOptions.showSelfUseTax && selected.selfUseTax ? [{ key: "selfUseTax", label: "自用增值稅", total: totals.selfUseTax }] : []),
     ...(selected.generalTax ? [{ key: "generalTax", label: "一般增值稅", total: totals.generalTax }] : []),
-    ...(selected.deedTax ? [{ key: "deedTax", label: "契稅", total: calculateTotalDeedTax(state.houses) }] : [])
+    ...(selected.deedTax && hasEffectiveHouseData(state) ? [{ key: "deedTax", label: "契稅", total: calculateTotalDeedTax(state.houses) }] : [])
   ];
   const table = columns.length ? `<table class="report-owner-tax-table"><thead><tr><th>所有權人</th>${columns.map((column) => `<th>${column.label}</th>`).join("")}</tr></thead><tbody>${groups.map((group) => `<tr><th scope="row">${escapeHtml(group.ownerName || "未命名所有權人")}</th>${columns.map((column) => `<td class="report-money">${formatMoney(group[column.key])}</td>`).join("")}</tr>`).join("")}</tbody>${state.displayOptions.showCaseTotal ? `<tfoot><tr><th scope="row">合計</th>${columns.map((column) => `<td class="report-money">${formatMoney(column.total)}</td>`).join("")}</tr></tfoot>` : ""}</table>` : "";
   const giftOnly = state.giftTax?.enabled && selected.giftTax && giftResult ? `<p class="report-case-gift-tax"><span>案件贈與稅</span><strong>${formatMoney(giftResult.finalGiftTax)}</strong></p>` : "";
