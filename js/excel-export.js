@@ -2,6 +2,7 @@ import { clauses } from "./clauses.js?v=20260818-9";
 import { formatLandNumber } from "./formatters.js?v=20260819-25";
 import { calculateTaxSummaryByOwner, calculateTotalDeedTax } from "./calculations.js";
 import { hasEffectiveHouseData, ownerName } from "./relationships.js";
+import { normalizeDistrict } from "./land-value-normalization.js";
 
 const EXCELJS_URL = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
 const COLORS = { black: "FF000000", dark: "FF333333", line: "FF999999", white: "FFFFFFFF" };
@@ -32,6 +33,16 @@ const columnLetter = (index) => {
   while (value > 0) { value -= 1; result = String.fromCharCode(65 + (value % 26)) + result; value = Math.floor(value / 26); }
   return result;
 };
+
+export function mainTransferValues(land, transfer) {
+  return {
+    share: shareText(transfer?.shareNumerator ?? land.shareNumerator, transfer?.shareDenominator ?? land.shareDenominator),
+    currentValue: numericOrNull(transfer?.currentValue ?? land.currentValue),
+    date: transfer?.date || null,
+    previousValue: numericOrNull(transfer?.previousValue), priceIndex: numericOrNull(transfer?.priceIndex),
+    selfUseTax: numericOrNull(transfer?.selfUseTax), generalTax: numericOrNull(transfer?.generalTax)
+  };
+}
 
 function spacingConfig(value) {
   return ({ compact: { header: 30, data: 21, section: 24 }, standard: { header: 36, data: 26, section: 28 }, relaxed: { header: 44, data: 34, section: 34 } })[value] ?? { header: 36, data: 26, section: 28 };
@@ -118,12 +129,12 @@ function writeMainTable(sheet, startRow, state, totals, styles) {
     const transfers = land.previousTransfers?.length ? land.previousTransfers : [null];
     const firstRow = row; const lastRow = row + transfers.length - 1;
     const basicValues = {
-      district: land.district || null, section: land.section || null, subsection: land.subsection || null,
+      district: normalizeDistrict(land.district) || null, section: land.section || null, subsection: land.subsection || null,
       landNumber: formatLandNumber(land.landNumber), zoning: land.zoning || null, area: numericOrNull(land.area), owner: ownerName(state, land.ownerId, land.owner),
-      announcedValue: numericOrNull(land.announcedValue), share: shareText(land.shareNumerator, land.shareDenominator),
-      currentValue: numericOrNull(land.currentValue)
+      announcedValue: numericOrNull(land.announcedValue)
     };
-    columns.slice(0, basicColumnCount).forEach((column, index) => {
+    columns.slice(0, basicColumnCount).filter((column) => !["share", "currentValue"].includes(column.key)).forEach((column) => {
+      const index = columns.findIndex((candidate) => candidate.key === column.key);
       const col = index + 1;
       if (transfers.length > 1) sheet.mergeCells(firstRow, col, lastRow, col);
       const cell = sheet.getCell(firstRow, col); cell.value = basicValues[column.key] ?? null;
@@ -132,12 +143,9 @@ function writeMainTable(sheet, startRow, state, totals, styles) {
     });
     transfers.forEach((transfer, transferIndex) => {
       const currentRow = firstRow + transferIndex;
-      const values = {
-        date: transfer?.date || null, previousValue: numericOrNull(transfer?.previousValue), priceIndex: numericOrNull(transfer?.priceIndex),
-        selfUseTax: numericOrNull(transfer?.selfUseTax), generalTax: numericOrNull(transfer?.generalTax)
-      };
-      columns.slice(basicColumnCount).forEach((column, offset) => {
-        const cell = sheet.getCell(currentRow, basicColumnCount + offset + 1); cell.value = values[column.key] ?? null;
+      const values = mainTransferValues(land, transfer);
+      columns.filter((column) => ["share", "currentValue"].includes(column.key) || columns.indexOf(column) >= basicColumnCount).forEach((column) => {
+        const cell = sheet.getCell(currentRow, columns.indexOf(column) + 1); cell.value = values[column.key] ?? null;
         if (column.format && cell.value !== null) cell.numFmt = column.format;
         cell.alignment = { horizontal: column.align, vertical: "middle", wrapText: true };
       });

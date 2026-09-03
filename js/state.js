@@ -40,16 +40,17 @@ export function createId() {
 }
 
 export function createEmptyTransfer() {
-  return { date: "", previousValue: 0, priceIndex: 0, selfUseTax: 0, generalTax: 0 };
+  return { date: "", previousValue: 0, shareNumerator: null, shareDenominator: null, sourcePriceIndex: null, priceIndex: 0, currentValue: null, sourceAppreciationAmount: null, sourceSelfUseTax: null, sourceGeneralTax: null, calculatedSelfUseTax: null, calculatedGeneralTax: null, selfUseTax: 0, generalTax: 0 };
 }
 
 export function createEmptyLand(overrides = {}) {
-  return {
+  const land = {
     id: createId(), sourceFileId: null, city: "臺北市", district: "", section: "", subsection: "",
     landNumber: "", rawLandNumber: "", area: 0, owner: state.owner, ownerId: state.owners[0]?.id ?? null, houseId: null, announcedValue: 0,
     shareNumerator: 1, shareDenominator: 1, previousTransfers: [],
     currentValue: 0, zoning: "", zonings: [], zoningStatus: "", zoningManual: false, ...overrides
   };
+  return { ...land, ...migrateTransferShares(land) };
 }
 
 state.lands = (state.lands ?? []).map((land) => ({
@@ -57,5 +58,20 @@ state.lands = (state.lands ?? []).map((land) => ({
   zoning: String(land.zoning ?? ""),
   zonings: Array.isArray(land.zonings) ? land.zonings : (land.zoning ? [String(land.zoning)] : []),
   zoningStatus: String(land.zoningStatus ?? ""),
-  zoningManual: Boolean(land.zoningManual)
+  zoningManual: Boolean(land.zoningManual),
+  ...migrateTransferShares(land)
 }));
+
+export function migrateTransferShares(land) {
+  const transfers = Array.isArray(land.previousTransfers) ? land.previousTransfers.map((transfer) => ({ ...createEmptyTransfer(), ...transfer })) : [];
+  if (transfers.length === 1 && (transfers[0].shareNumerator == null || transfers[0].shareDenominator == null)) {
+    transfers[0].shareNumerator = land.shareNumerator;
+    transfers[0].shareDenominator = land.shareDenominator;
+  }
+  const shareNeedsReview = transfers.length > 1 && transfers.some((transfer) => transfer.shareNumerator == null || transfer.shareDenominator == null);
+  for (const transfer of transfers) {
+    const denominator = Number(transfer.shareDenominator);
+    if (denominator) transfer.currentValue = Math.round(Number(land.area) * Number(land.announcedValue) * Number(transfer.shareNumerator) / denominator);
+  }
+  return { previousTransfers: transfers, shareNeedsReview };
+}

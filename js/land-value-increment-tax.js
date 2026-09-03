@@ -151,3 +151,21 @@ export function calculateLandValueIncrementTax(data) {
     selfUseTax
   };
 }
+
+export function calculateLandValueIncrementTaxes(land, calculationDate) {
+  return (land?.previousTransfers ?? []).map((transfer) => {
+    const result = calculateLandValueIncrementTax({
+      area: land.area,
+      announcedValue: land.announcedValue,
+      shareNumerator: transfer.shareNumerator ?? land.shareNumerator,
+      shareDenominator: transfer.shareDenominator ?? land.shareDenominator,
+      previousValue: transfer.previousValue,
+      priceIndex: transfer.priceIndex,
+      previousTransferDate: transfer.date,
+      calculationDate,
+      assessedTaxReductionRate: transfer.assessedTaxReductionRate ?? 0,
+      creditableLandTax: transfer.creditableLandTax ?? 0
+    });
+    return { ...transfer, taxCalculation: result, appreciationAmount: result.valid ? result.landIncreaseAmount : transfer.appreciationAmount ?? null, selfUseTax: result.valid ? result.selfUseTax : null, generalTax: result.valid ? result.generalTax : null };
+  });
+}

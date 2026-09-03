@@ -3,12 +3,20 @@ import { calculateGiftTax, calculateTaxSummaryByOwner, calculateTotalDeedTax, ca
 import { formatArea, formatLandNumber, formatMoney } from "./formatters.js?v=20260819-25";
 import { hasEffectiveHouseData, ownerName } from "./relationships.js";
 import { formatZoningForPrint, getVisiblePrintColumns } from "./zoning-print.js";
+import { normalizeDistrict } from "./land-value-normalization.js";
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
 })[character]);
 
 const fraction = (numerator, denominator) => `${Number(numerator) || 0} / ${Number(denominator) || 0}`;
+
+export function formatShareForPrint(numerator, denominator) {
+  const first = Number(numerator) || 0; const second = Number(denominator) || 0;
+  return second >= 100000
+    ? `<span class="report-share report-share-two-line"><span>${first} /</span><span>${second}</span></span>`
+    : `<span class="report-share report-share-single-line">${first} / ${second}</span>`;
+}
 
 export function getReportRowCount(lands, showLandZoning = false, zoningPrintLayout = "row") {
   return (Array.isArray(lands) ? lands : []).reduce(
@@ -28,15 +36,13 @@ export function getReportDensity(state) {
 function basicCells(state, land, rowSpan) {
   const span = ` rowspan="${rowSpan}"`;
   const visible = { district: true, section: true, subsection: true, owner: true, ...(state.displayOptions.printLandColumns ?? {}) };
-  return `${visible.district ? `<td${span}>${escapeHtml(land.district)}</td>` : ""}
+  return `${visible.district ? `<td${span}>${escapeHtml(normalizeDistrict(land.district))}</td>` : ""}
     ${visible.section ? `<td${span}>${escapeHtml(land.section)}</td>` : ""}
     ${visible.subsection ? `<td${span}>${escapeHtml(land.subsection)}</td>` : ""}
     <td${span}>${escapeHtml(formatLandNumber(land.landNumber))}</td>
     <td${span}>${formatArea(land.area)}</td>
     ${visible.owner ? `<td${span}>${escapeHtml(ownerName(state, land.ownerId, land.owner))}</td>` : ""}
-    <td class="report-money"${span}>${formatMoney(land.announcedValue)}</td>
-    <td${span}>${fraction(land.shareNumerator, land.shareDenominator)}</td>
-    <td class="report-money report-current-value"${span}>${formatMoney(land.currentValue)}</td>`;
+    <td class="report-money"${span}>${formatMoney(land.announcedValue)}</td>`;
 }
 
 function transferCells(state, land, transfer, index, rowSpan) {
@@ -45,9 +51,11 @@ function transferCells(state, land, transfer, index, rowSpan) {
   const zoning = formatZoningForPrint(land.zonings?.length ? land.zonings : land.zoning, state.displayOptions.zoningTextMode);
   const zoningCell = zoningColumn && index === 0 ? `<td class="report-zoning-column" rowspan="${rowSpan}">${escapeHtml(zoning)}</td>` : "";
   if (!transfer) {
-    return `<td></td><td class="report-money"></td><td></td>${showSelfUseTax ? '<td class="report-money"></td>' : ""}<td class="report-money"></td>${zoningCell}`;
+    return `<td></td><td class="report-money"></td><td></td><td class="report-money"></td><td></td>${showSelfUseTax ? '<td class="report-money"></td>' : ""}<td class="report-money"></td>${zoningCell}`;
   }
-  return `<td>${escapeHtml(transfer.date)}</td>
+  return `<td>${formatShareForPrint(transfer.shareNumerator ?? land.shareNumerator, transfer.shareDenominator ?? land.shareDenominator)}</td>
+    <td class="report-money report-current-value">${formatMoney(transfer.currentValue)}</td>
+    <td>${escapeHtml(transfer.date)}</td>
     <td class="report-money">${formatMoney(transfer.previousValue)}</td>
     <td>${escapeHtml(transfer.priceIndex || "")}</td>
     ${showSelfUseTax ? `<td class="report-money">${formatMoney(transfer.selfUseTax)}</td>` : ""}

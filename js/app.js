@@ -1,11 +1,11 @@
 import { createEmptyLand, createId, LAND_TAX_STORAGE_KEY, state } from "./state.js";
 import { clearSessionState, saveSessionState } from "./session-state.js";
-import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260902-1";
-import { renderFiles, renderLandTable } from "./report-renderer.js?v=20260902-2";
+import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260903-5";
+import { renderFiles, renderLandTable } from "./report-renderer.js?v=20260903-4";
 import { formatArea, formatLandNumber, formatMoney, parseFormattedNumber } from "./formatters.js?v=20260819-25";
-import { calculateCaseCurrentValue, calculateGiftTax, calculateHouseCurrentValue, calculateHouseOwnerDeedTax, calculateLandCurrentValue, calculateTotalDeedTax, calculateTotalHouseCurrentValue, calculateTotalLandCurrentValue, calculateTransferTaxTotals } from "./calculations.js";
-import { renderA4Report } from "./a4-report-renderer.js?v=20260902-3";
-import { exportExcel } from "./excel-export.js?v=20260902-2";
+import { calculateCaseCurrentValue, calculateGiftTax, calculateHouseCurrentValue, calculateHouseOwnerDeedTax, calculateLandCurrentValue, calculateTransferCurrentValue, calculateTotalDeedTax, calculateTotalHouseCurrentValue, calculateTotalLandCurrentValue, calculateTransferTaxTotals } from "./calculations.js";
+import { renderA4Report } from "./a4-report-renderer.js?v=20260903-4";
+import { exportExcel } from "./excel-export.js?v=20260903-4";
 import { createReportSettings } from "./report-settings.js";
 import { createHouse, ensureOwner, hasEffectiveHouseData, houseLabel, ownerName } from "./relationships.js";
 import { orderLandsByDocuments, sortDocumentsByLand } from "./document-order.js";
@@ -130,9 +130,9 @@ function renderRelationshipWarnings() {
 }
 
 function recalculateLand(land, row = null) {
+  for (const transfer of land.previousTransfers ?? []) transfer.currentValue = calculateTransferCurrentValue(land, transfer);
   land.currentValue = calculateLandCurrentValue(land);
-  const output = row?.querySelector("[data-current-value]");
-  if (output) output.textContent = formatMoney(land.currentValue);
+  document.querySelectorAll(`[data-land-id="${land.id}"] [data-current-value]`).forEach((output, index) => { output.textContent = formatMoney(land.previousTransfers[index]?.currentValue); });
   recalculateSummary();
 }
 
@@ -341,7 +341,12 @@ elements.landRows.addEventListener("input", (event) => {
     const index = Number(event.target.dataset.transferIndex);
     const field = event.target.dataset.transfer;
     land.previousTransfers[index][field] = field === "date" ? event.target.value : parseNumber(event.target.value);
-    renderPreview();
+    if (["shareNumerator", "shareDenominator"].includes(field)) {
+      land.shareNeedsReview = land.previousTransfers.some((transfer) => transfer.shareNumerator == null || transfer.shareDenominator == null || Number(transfer.shareDenominator) === 0);
+      recalculateLand(land, row);
+    } else {
+      recalculateSummary();
+    }
   }
   savePageState();
 });

@@ -1,6 +1,7 @@
 import { state } from "./state.js";
 import { formatArea, formatLandNumber, formatMoney } from "./formatters.js?v=20260819-25";
 import { ownerName } from "./relationships.js";
+import { normalizeDistrict } from "./land-value-normalization.js";
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
 
@@ -24,7 +25,7 @@ function basicLandCells(land, rowSpan) {
   const zoning = state.displayOptions.showLandZoning
     ? `<td class="land-basic-cell zoning-cell"${span}><textarea data-field="zoning" aria-label="使用分區" rows="2">${escapeHtml(land.zoning)}</textarea>${land.zoningStatus === "unsupported" ? '<span class="table-cell-hint">新北市尚未支援自動查詢</span>' : ""}</td>`
     : "";
-  return `<td class="land-basic-cell district-cell"${span}>${input("district", land.district, "區")}</td>
+  return `<td class="land-basic-cell district-cell"${span}>${input("district", normalizeDistrict(land.district), "區")}</td>
     <td class="land-basic-cell section-cell"${span}>${input("section", land.section, "段")}</td>
     <td class="land-basic-cell subsection-cell"${span}>${input("subsection", land.subsection, "小段")}</td>
     <td class="land-basic-cell"${span}>${input("landNumber", land.landNumber, "地號", false, "land-number")}</td>${zoning}
@@ -32,13 +33,14 @@ function basicLandCells(land, rowSpan) {
     <td class="land-basic-cell"${span}>${relationshipSelect("ownerId", land.ownerId, state.owners.map((owner) => ({ value: owner.id, label: owner.name || "（未命名）" })), "所有權人")}</td>
     <td class="land-basic-cell"${span}>${relationshipSelect("houseId", land.houseId, [{ value: "", label: "無房屋" }, ...state.houses.map((house, index) => ({ value: house.id, label: compactHouseLabel(house, index), title: house.address }))], "對應房屋")}</td>
     <td class="land-basic-cell numeric"${span}>${input("announcedValue", land.announcedValue || "", "公告現值", true, "money")}</td>
-    <td class="land-basic-cell"${span}><div class="share-fields">${input("shareNumerator", land.shareNumerator, "持分分子", true)}<span>/</span>${input("shareDenominator", land.shareDenominator, "持分分母", true)}</div></td>
-    <td class="land-basic-cell numeric"${span}><output class="current-value" data-current-value>${formatMoney(land.currentValue)}</output></td>`;
+    `;
 }
 
 function transferCells(transfer, index) {
-  if (!transfer) return `<td></td><td class="numeric"></td><td></td><td class="numeric"></td><td class="numeric"></td>`;
-  return `<td>${transferInput("date", transfer, index, "前次移轉日期")}</td>
+  if (!transfer) return `<td></td><td class="numeric"></td><td></td><td class="numeric"></td><td></td><td class="numeric"></td><td class="numeric"></td>`;
+  return `<td><div class="share-fields">${transferInput("shareNumerator", transfer, index, "持分分子")}<span>/</span>${transferInput("shareDenominator", transfer, index, "持分分母")}</div></td>
+    <td class="numeric"><output class="current-value" data-current-value>${formatMoney(transfer.currentValue)}</output></td>
+    <td>${transferInput("date", transfer, index, "前次移轉日期")}</td>
     <td class="numeric">${transferInput("previousValue", transfer, index, "前次移轉現值", "money")}</td>
     <td class="transfer-index">${transferInput("priceIndex", transfer, index, "物價指數")}</td>
     <td class="numeric">${transferInput("selfUseTax", transfer, index, "自用增值稅", "money")}</td>

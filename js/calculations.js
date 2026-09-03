@@ -12,14 +12,40 @@ function nonNegativeMoney(value) {
 // 舊表欄名為「契稅 6%」，範例 536,166 × 6% = 32,170（四捨五入）。
 export const DEED_TAX_RATE = 0.06;
 
-export function calculateLandCurrentValue(land) {
-  const area = finiteNumber(land?.area);
-  const announcedValue = finiteNumber(land?.announcedValue);
-  const numerator = finiteNumber(land?.shareNumerator);
-  const denominator = finiteNumber(land?.shareDenominator);
+function validShare(numerator, denominator) {
+  const n = Number(numerator); const d = Number(denominator);
+  return Number.isFinite(n) && Number.isFinite(d) && d !== 0 ? { numerator: n, denominator: d } : null;
+}
 
-  if (denominator === 0) return 0;
-  return Math.round(area * announcedValue * (numerator / denominator));
+export function transferShare(land, transfer) {
+  return validShare(transfer?.shareNumerator, transfer?.shareDenominator)
+    ?? validShare(land?.shareNumerator, land?.shareDenominator)
+    ?? { numerator: 0, denominator: 1 };
+}
+
+const gcd = (a, b) => { let x = Math.abs(a); let y = Math.abs(b); while (y) [x, y] = [y, x % y]; return x || 1; };
+const lcm = (a, b) => Math.abs(a * b) / gcd(a, b);
+
+export function calculateCombinedTransferShare(land, { reduce = false } = {}) {
+  const transfers = (land?.previousTransfers ?? []).filter((transfer) => validShare(transfer?.shareNumerator, transfer?.shareDenominator));
+  if (!transfers.length) return transferShare(land, null);
+  const denominator = transfers.reduce((value, transfer) => lcm(value, Number(transfer.shareDenominator)), 1);
+  const numerator = transfers.reduce((sum, transfer) => sum + Number(transfer.shareNumerator) * (denominator / Number(transfer.shareDenominator)), 0);
+  if (!reduce) return { numerator, denominator };
+  const divisor = gcd(numerator, denominator);
+  return { numerator: numerator / divisor, denominator: denominator / divisor };
+}
+
+export function calculateTransferCurrentValue(land, transfer) {
+  const area = finiteNumber(land?.area); const announcedValue = finiteNumber(land?.announcedValue);
+  const { numerator, denominator } = transferShare(land, transfer);
+  return denominator ? Math.round(area * announcedValue * numerator / denominator) : 0;
+}
+
+export function calculateLandCurrentValue(land) {
+  const transfers = (land?.previousTransfers ?? []).filter((transfer) => validShare(transfer?.shareNumerator, transfer?.shareDenominator));
+  if (transfers.length) return transfers.reduce((sum, transfer) => sum + calculateTransferCurrentValue(land, transfer), 0);
+  return calculateTransferCurrentValue(land, null);
 }
 
 export function calculateTotalLandCurrentValue(lands) {

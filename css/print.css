@@ -49,6 +49,9 @@
 .a4-land-table .report-zoning-column { min-width: 14mm; padding-left: 8px; white-space: normal; overflow: visible; overflow-wrap: anywhere; word-break: break-word; text-align: left; }
 .a4-land-table .report-house-address { text-align: left; }
 .a4-land-table .report-house-share { text-align: center; white-space: nowrap; }
+.report-share { display: inline-flex; align-items: center; justify-content: center; }
+.report-share-single-line { white-space: nowrap; }
+.report-share-two-line { flex-direction: column; line-height: 1.12; white-space: nowrap; }
 .a4-land-table .report-total-row td { color: var(--print-black); font-weight: 600; border-top: 2px solid var(--print-black); }
 .orientation-portrait .a4-land-table .r-district { width: 4%; }
 .orientation-portrait .a4-land-table .r-section { width: 5%; }

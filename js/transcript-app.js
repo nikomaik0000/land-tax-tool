@@ -2,7 +2,7 @@ import { calculateGiftTax, calculateLandCurrentValue, calculateTotalLandCurrentV
 import { loadCpiWorkbook, lookupPriceIndex, normalizeRocMonth } from "./cpi-lookup.js";
 import { CPI_SOURCE, loadDefaultCpiSource } from "./cpi-source.js";
 import { formatArea, formatLandNumber, formatMoney, formatSequence, parseFormattedNumber } from "./formatters.js";
-import { calculateLandValueIncrementTax } from "./land-value-increment-tax.js";
+import { calculateLandValueIncrementTaxes } from "./land-value-increment-tax.js";
 import { parseTranscriptPdfToLands } from "./transcript-parser.js";
 import { renderA4Report } from "./a4-report-renderer.js";
 import { exportExcel } from "./excel-export.js";
@@ -64,30 +64,15 @@ const hasValue = (value) => value !== null && value !== undefined && value !== "
 const hasFiniteValue = (value) => hasValue(value) && Number.isFinite(Number(value));
 
 function updateLandCurrentValue(land) {
+  const hasTransferShare = land.previousTransfers?.some((transfer) => hasFiniteValue(transfer.shareNumerator) && hasFiniteValue(transfer.shareDenominator) && Number(transfer.shareDenominator) !== 0);
   const complete = hasFiniteValue(land.area) && hasFiniteValue(land.announcedValue)
-    && hasFiniteValue(land.shareNumerator) && hasFiniteValue(land.shareDenominator) && Number(land.shareDenominator) !== 0;
+    && (hasTransferShare || (hasFiniteValue(land.shareNumerator) && hasFiniteValue(land.shareDenominator) && Number(land.shareDenominator) !== 0));
   land.currentValue = complete ? calculateLandCurrentValue(land) : null;
 }
 
 function calculateLandTaxForLand(land) {
-  const transfer = land.previousTransfers[0];
-  if (!transfer) return null;
-  const result = calculateLandValueIncrementTax({
-    area: land.area,
-    announcedValue: land.announcedValue,
-    shareNumerator: land.shareNumerator,
-    shareDenominator: land.shareDenominator,
-    previousValue: transfer.previousValue,
-    priceIndex: transfer.priceIndex,
-    previousTransferDate: transfer.date,
-    calculationDate: transcriptState.calculationDate,
-    assessedTaxReductionRate: transfer.assessedTaxReductionRate ?? 0,
-    creditableLandTax: transfer.creditableLandTax ?? 0
-  });
-  transfer.taxCalculation = result;
-  transfer.selfUseTax = result.valid ? result.selfUseTax : null;
-  transfer.generalTax = result.valid ? result.generalTax : null;
-  return result;
+  land.previousTransfers = calculateLandValueIncrementTaxes(land, transcriptState.calculationDate);
+  return land.previousTransfers.map((transfer) => transfer.taxCalculation);
 }
 
 function applyLandTaxCalculations(render = true) {

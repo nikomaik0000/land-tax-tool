@@ -1,3 +1,5 @@
+import { normalizeDistrict } from "./land-value-normalization.js";
+
 const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
 const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
 
@@ -216,12 +218,19 @@ function globalNumbers(field, items) {
   const seen = new Set();
   const direct = fieldCandidates(field, items, { numericOnly: true }).map((entry) => entry.value);
   const columns = aliasFragments(items, FIELD_ALIASES[field] ?? []).flatMap((label) => items.filter((item) =>
-    item.page === label.page && item.y < label.y - 4 && label.y - item.y <= 160
+    item.page === label.page && item.y < label.y - 4 && label.y - item.y <= 300
     && Math.abs(item.x - label.x) <= 60 && isNumericCandidate(item)
   ));
   return [...direct, ...columns]
     .map((item) => ({ value: parseNumericValue(item.text), page: item.page, y: item.y }))
     .filter((entry) => entry.value !== null && !seen.has(`${entry.page}:${entry.y}:${entry.value}`) && seen.add(`${entry.page}:${entry.y}:${entry.value}`))
+    .sort((a, b) => a.page - b.page || b.y - a.y);
+}
+
+function globalShares(items) {
+  const seen = new Set();
+  return items.map((item) => ({ ...parseShareText(item.text), page: item.page, y: item.y, x: item.x }))
+    .filter((entry) => !entry.needsConfirmation && !seen.has(`${entry.page}:${entry.y}:${entry.numerator}/${entry.denominator}`) && seen.add(`${entry.page}:${entry.y}:${entry.numerator}/${entry.denominator}`))
     .sort((a, b) => a.page - b.page || b.y - a.y);
 }
 
@@ -231,18 +240,162 @@ function numericAtHeaderColumn(row, header, field, items) {
   return parseNumericValue(row.items.filter(isNumericCandidate).sort((a, b) => Math.abs(a.x - label.x) - Math.abs(b.x - label.x))[0]?.text);
 }
 
+const roundedOrNull = (value) => value === null || value === undefined ? null : Math.round(value);
+
+function valueItemsAfterLabel(row, labelText) {
+  const label = normalizeText(labelText);
+  const rowText = normalizeText(row.text);
+  if (!rowText.startsWith(label)) return [];
+  const labelWidth = row.items.filter((item) => item.x < 220).reduce((right, item) => Math.max(right, item.x + item.width), 0);
+  return row.items.filter((item) => item.x > Math.max(200, labelWidth + 8));
+}
+
+function rowNumericAfterLabel(row, labelText) {
+  return parseNumericValue(valueItemsAfterLabel(row, labelText).map((item) => item.text).join(""));
+}
+
+function rowShareAfterLabel(row, labelText) {
+  return parseShareText(valueItemsAfterLabel(row, labelText).map((item) => item.text).join(""));
+}
+
+function sourceTransferCurrentValue(land, transfer) {
+  const denominator = Number(transfer.shareDenominator);
+  return denominator ? Math.round(Number(land.area) * Number(land.announcedValue) * Number(transfer.shareNumerator) / denominator) : null;
+}
+
+function parseTaipeiTransfers(rows, land) {
+  const documentRows = [...rows].sort((a, b) => a.page - b.page || b.y - a.y);
+  const starts = documentRows.map((row, index) => normalizeText(row.text).startsWith("前次移轉現值(元/平方公尺)") ? index : -1).filter((index) => index >= 0);
+  return starts.map((start, transferIndex) => {
+    const block = documentRows.slice(start, starts[transferIndex + 1] ?? documentRows.length);
+    const find = (label) => block.find((row) => normalizeText(row.text).startsWith(normalizeText(label)));
+    const rawDate = valueItemsAfterLabel(find("原地價年月") ?? { text: "", items: [] }, "原地價年月").map((item) => item.text).join("");
+    const dateMatch = normalizeText(rawDate).match(/(\d{2,3})年(\d{1,2})月/);
+    const share = rowShareAfterLabel(find("歷次權利範圍") ?? { text: "", items: [] }, "歷次權利範圍");
+    const sourcePriceIndex = rowNumericAfterLabel(block.find((row) => /^物價指數(?:\d|\.)/.test(normalizeText(row.text))) ?? { text: "", items: [] }, "物價指數");
+    const transfer = {
+      date: dateMatch ? `${dateMatch[1]}年${dateMatch[2].padStart(2, "0")}月` : rawDate,
+      rawDate,
+      previousValue: rowNumericAfterLabel(block[0], "前次移轉現值(元/平方公尺)"),
+      shareNumerator: share.numerator,
+      shareDenominator: share.denominator,
+      sourcePriceIndex,
+      priceIndex: sourcePriceIndex,
+      sourceAppreciationAmount: null,
+      sourceSelfUseTax: rowNumericAfterLabel(find("自用住宅用地應納稅額") ?? { text: "", items: [] }, "自用住宅用地應納稅額"),
+      sourceGeneralTax: rowNumericAfterLabel(find("一般土地應納稅額") ?? { text: "", items: [] }, "一般土地應納稅額"),
+      calculatedSelfUseTax: null,
+      calculatedGeneralTax: null
+    };
+    transfer.currentValue = sourceTransferCurrentValue(land, transfer);
+    transfer.selfUseTax = roundedOrNull(transfer.sourceSelfUseTax);
+    transfer.generalTax = roundedOrNull(transfer.sourceGeneralTax);
+    return transfer;
+  });
+}
+
+function parseNewTaipeiTransfers(rows, land) {
+  const transferHeader = rows.find((row) => normalizeText(row.text).includes("前次移轉年月") && normalizeText(row.text).includes("物價指數"));
+  const transferEnd = rows.find((row) => normalizeText(row.text).startsWith("持分合計"));
+  if (!transferHeader || !transferEnd) return [];
+  const transferRows = rows.filter((row) => row.page === transferHeader.page && row.y < transferHeader.y && row.y > transferEnd.y);
+  const transfers = transferRows.map((row) => {
+    const byX = (minimum, maximum) => row.items.filter((item) => item.x >= minimum && item.x < maximum).map((item) => item.text).join("");
+    const parsedDate = parseRocDateText(byX(0, 150));
+    const share = parseShareText(byX(420, Number.POSITIVE_INFINITY));
+    if (!parsedDate.valid || share.needsConfirmation) return null;
+    const transfer = {
+      date: parsedDate.date, rawDate: parsedDate.rawDate,
+      previousValue: parseNumericValue(byX(280, 420)),
+      shareNumerator: share.numerator, shareDenominator: share.denominator,
+      priceIndex: parseNumericValue(byX(150, 280)),
+      sourceAppreciationAmount: null, sourceSelfUseTax: null, sourceGeneralTax: null,
+      calculatedSelfUseTax: null, calculatedGeneralTax: null
+    };
+    transfer.currentValue = sourceTransferCurrentValue(land, transfer);
+    return transfer;
+  }).filter(Boolean);
+  const taxHeader = rows.find((row) => normalizeText(row.text).includes("土地漲價總數額") && normalizeText(row.text).includes("一般/工業用地稅額"));
+  const totalRow = rows.find((row) => normalizeText(row.text).startsWith("[總計]"));
+  const taxRows = taxHeader && totalRow ? rows.filter((row) => row.page === taxHeader.page && row.y < taxHeader.y && row.y > totalRow.y) : [];
+  taxRows.slice(0, transfers.length).forEach((row, index) => {
+    const values = row.items.filter(isNumericCandidate).sort((a, b) => a.x - b.x).map((item) => parseNumericValue(item.text));
+    const transfer = transfers[index];
+    [transfer.sourceAppreciationAmount, transfer.sourceGeneralTax, transfer.sourceSelfUseTax] = values;
+    transfer.selfUseTax = roundedOrNull(transfer.sourceSelfUseTax);
+    transfer.generalTax = roundedOrNull(transfer.sourceGeneralTax);
+  });
+  return transfers;
+}
+
+function parseOwner(rows) {
+  const row = rows.find((candidate) => normalizeText(candidate.text).startsWith("所有權人"));
+  return row ? normalizeText(row.text).replace(/^所有權人/, "") : "";
+}
+
+function parseNewTaipeiDistrict(rows) {
+  const matched = rows.map((row) => normalizeText(row.text).match(/行政區([^\d\[\](),，。:：()（）]{1,8}區)/)?.[1]).find(Boolean) ?? "";
+  const district = normalizeDistrict(matched);
+  return district ? `${district}區` : "";
+}
+
+function parseNewTaipeiArea(rows) {
+  const header = rows.find((row) => normalizeText(row.text).includes("登記面積"));
+  if (!header) return null;
+  const labelItems = header.items.filter((item) => normalizeText(item.text).includes("登記") || normalizeText(item.text).includes("面積"));
+  const x = labelItems.length ? Math.min(...labelItems.map((item) => item.x)) : 390;
+  const candidates = rows.filter((row) => row.page === header.page && row.y < header.y && header.y - row.y < 90)
+    .filter((row) => !/進度\d+%/.test(normalizeText(row.text)))
+    .flatMap((row) => row.items.filter((item) => Math.abs(item.x - x) <= 45 && isNumericCandidate(item)).map((item) => ({ item, distance: header.y - row.y + Math.abs(item.x - x) })) )
+    .sort((a, b) => a.distance - b.distance);
+  return parseNumericValue(candidates[0]?.item.text);
+}
+
+export function compareRocYearMonth(left, right) {
+  const parse = (value) => {
+    const matched = normalizeText(value).match(/^(\d{1,3})年(\d{1,2})月$/);
+    return matched ? { year: Number(matched[1]), month: Number(matched[2]) } : null;
+  };
+  const a = parse(left?.date ?? left); const b = parse(right?.date ?? right);
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+  return a.year - b.year || a.month - b.month;
+}
+
+export function sortPreviousTransfersOldestFirst(transfers) {
+  return (Array.isArray(transfers) ? transfers : []).map((transfer, index) => ({ transfer, index }))
+    .sort((a, b) => compareRocYearMonth(a.transfer, b.transfer) || a.index - b.index)
+    .map(({ transfer }) => transfer);
+}
+
+function ownerFallbackFromFileName(fileName, parsedOwner) {
+  const owner = String(parsedOwner ?? "").trim();
+  const base = String(fileName ?? "").replace(/\.pdf$/i, "").trim();
+  const humanName = /^[\u3400-\u9fff]{2,6}$/.test(base);
+  const masked = /[*＊●•]/.test(owner);
+  return humanName && (!owner || masked) ? base : owner;
+}
+
+function normalizeTaipeiLandNumber(value) {
+  const match = String(value ?? "").match(/^(\d+)-(\d+)$/);
+  if (!match) return String(value ?? "").replace(/^0+/, "") || "0";
+  const main = String(Number(match[1])); const sub = Number(match[2]);
+  return sub ? `${main}-${sub}` : main;
+}
+
 function parseTransfers(rows, items) {
+  const dateHeaders = rows.flatMap((header) => aliasFragments(header.items, FIELD_ALIASES.previousTransferDate).map((label) => ({ header, label })));
   const dates = rows.map((row) => {
     const match = row.normalizedText.match(/(?:民國)?\d{2,3}(?:年|[.\/-])\d{1,2}月?/);
     const dateItem = match ? row.items.find((item) => normalizeText(item.text).includes(match[0].match(/\d{2,3}/)?.[0] ?? "")) : null;
     return match ? { row, dateItem, parsed: parseRocDateText(match[0]) } : null;
-  }).filter((entry) => entry?.parsed.valid).filter(({ row, dateItem }) => rows.some((header) => {
-    if (header.page !== row.page || header.y <= row.y || header.y - row.y >= 90) return false;
-    const labels = aliasFragments(header.items, FIELD_ALIASES.previousTransferDate);
-    return labels.some((label) => Math.abs(label.x - (dateItem?.x ?? row.x)) <= 80);
-  }));
+  }).filter((entry) => entry?.parsed.valid).filter(({ row, dateItem }) => dateHeaders.some(({ header, label }) =>
+    header.page === row.page && header.y > row.y && Math.abs(label.x - (dateItem?.x ?? row.x)) <= 80
+  ));
 
   const collections = { previousValue: globalNumbers("previousValue", items), priceIndex: globalNumbers("priceIndex", items), selfUseTax: globalNumbers("selfUseTax", items).map((x) => ({ ...x, value: Math.round(x.value) })), generalTax: globalNumbers("generalTax", items).map((x) => ({ ...x, value: Math.round(x.value) })) };
+  const shares = globalShares(items);
   const select = (field, row, index) => {
     const values = collections[field];
     if (!values.length) return null;
@@ -250,8 +403,9 @@ function parseTransfers(rows, items) {
     return [...values].sort((a, b) => (a.page === row.page ? Math.abs(a.y - row.y) : 10000) - (b.page === row.page ? Math.abs(b.y - row.y) : 10000))[0]?.value ?? null;
   };
   return dates.map(({ row, parsed }, index) => {
-    const header = rows.filter((candidate) => candidate.page === row.page && candidate.y > row.y && candidate.y - row.y < 90).sort((a, b) => a.y - b.y)[0] ?? row;
-    return { date: parsed.date, rawDate: parsed.rawDate, previousValue: numericAtHeaderColumn(row, header, "previousValue", items) ?? select("previousValue", row, index), priceIndex: numericAtHeaderColumn(row, header, "priceIndex", items) ?? select("priceIndex", row, index), selfUseTax: select("selfUseTax", row, index), generalTax: select("generalTax", row, index) };
+    const header = dateHeaders.filter(({ header: candidate }) => candidate.page === row.page && candidate.y > row.y).sort((a, b) => a.header.y - b.header.y)[0]?.header ?? row;
+    const share = shares.length === dates.length ? shares[index] : [...shares].sort((a, b) => (a.page === row.page ? Math.abs(a.y - row.y) : 10000) - (b.page === row.page ? Math.abs(b.y - row.y) : 10000))[0];
+    return { date: parsed.date, rawDate: parsed.rawDate, previousValue: numericAtHeaderColumn(row, header, "previousValue", items) ?? select("previousValue", row, index), shareNumerator: share?.numerator ?? null, shareDenominator: share?.denominator ?? null, priceIndex: numericAtHeaderColumn(row, header, "priceIndex", items) ?? select("priceIndex", row, index), selfUseTax: roundedOrNull(numericAtHeaderColumn(row, header, "selfUseTax", items) ?? select("selfUseTax", row, index)), generalTax: roundedOrNull(numericAtHeaderColumn(row, header, "generalTax", items) ?? select("generalTax", row, index)) };
   });
 }
 
@@ -259,7 +413,7 @@ function missingFieldsFor(land) {
   const missing = [];
   if (!land.landNumber) missing.push("landNumber"); if (land.area === null) missing.push("area"); if (land.announcedValue === null) missing.push("announcedValue");
   if (land.shareNumerator === null || land.shareDenominator === null) missing.push("share");
-  land.previousTransfers.forEach((transfer, index) => ["previousValue", "priceIndex", "selfUseTax", "generalTax"].forEach((field) => { if (transfer[field] === null) missing.push(`previousTransfers[${index}].${field}`); }));
+  land.previousTransfers.forEach((transfer, index) => ["previousValue", "shareNumerator", "shareDenominator", "priceIndex", "selfUseTax", "generalTax"].forEach((field) => { if (transfer[field] === null) missing.push(`previousTransfers[${index}].${field}`); }));
   return missing;
 }
 
@@ -269,12 +423,27 @@ const confidenceFor = (land, missing) => {
 };
 
 export function parseGenericLandTaxPdf(items, template = detectPdfTemplate(items)) {
+  if (template === "taipei" || template === "new-taipei") {
+    const rows = groupRows(items); const identity = parseIdentity(rows, items);
+    if (template === "taipei") {
+      identity.landNumber = normalizeTaipeiLandNumber(identity.landNumber);
+      identity.rawLandNumber = identity.landNumber;
+    }
+    const area = template === "new-taipei" ? parseNewTaipeiArea(rows) : parseArea(rows, items); const announcedValue = parseAnnouncedValue(rows, items); const share = parseShare(rows, items);
+    if (template === "new-taipei") { identity.city = "新北市"; identity.district = parseNewTaipeiDistrict(rows); }
+    const data = { ...identity, area, owner: parseOwner(rows), announcedValue, shareNumerator: share.numerator, shareDenominator: share.denominator, previousTransfers: [] };
+    data.previousTransfers = template === "taipei" ? parseTaipeiTransfers(rows, data) : parseNewTaipeiTransfers(rows, data);
+    const missingFields = missingFieldsFor(data);
+    return [{ data, meta: { template, confidence: confidenceFor(data, missingFields), missingFields, page: 1 } }];
+  }
   const records = [];
   for (const page of [...new Set(items.map((item) => item.page))]) {
     const pageItems = items.filter((item) => item.page === page); const rows = groupRows(pageItems); const identity = parseIdentity(rows, pageItems);
     const area = parseArea(rows, pageItems); const announcedValue = parseAnnouncedValue(rows, pageItems); const share = parseShare(rows, pageItems);
     if (!identity.landNumber && area === null && announcedValue === null) continue;
-    const data = { ...identity, area, owner: "", announcedValue, shareNumerator: share.numerator, shareDenominator: share.denominator, previousTransfers: parseTransfers(rows, pageItems) };
+    const data = { ...identity, area, owner: "", announcedValue, shareNumerator: share.numerator, shareDenominator: share.denominator, previousTransfers: [] };
+    data.previousTransfers = template === "taipei" ? parseTaipeiTransfers(rows, data) : template === "new-taipei" ? parseNewTaipeiTransfers(rows, data) : parseTransfers(rows, pageItems);
+    for (const transfer of data.previousTransfers) transfer.currentValue ??= sourceTransferCurrentValue(data, transfer);
     const missingFields = missingFieldsFor(data);
     records.push({ data, meta: { template, confidence: confidenceFor(data, missingFields), missingFields, page } });
   }
@@ -291,8 +460,8 @@ export function parseGenericLandTaxPdf(items, template = detectPdfTemplate(items
     }
   }
 
-  const allSelfUseTaxes = globalNumbers("selfUseTax", items).map((entry) => Math.round(entry.value));
-  const allGeneralTaxes = globalNumbers("generalTax", items).map((entry) => Math.round(entry.value));
+  const allSelfUseTaxes = template === "generic" ? globalNumbers("selfUseTax", items).map((entry) => Math.round(entry.value)) : [];
+  const allGeneralTaxes = template === "generic" ? globalNumbers("generalTax", items).map((entry) => Math.round(entry.value)) : [];
   for (const record of merged) {
     record.data.previousTransfers.forEach((transfer, index) => {
       if (transfer.selfUseTax === null && allSelfUseTaxes[index] !== undefined) transfer.selfUseTax = allSelfUseTaxes[index];
@@ -306,6 +475,10 @@ export function parseGenericLandTaxPdf(items, template = detectPdfTemplate(items
 
 export function parseNormalizedTextItems(items, fileName = "") {
   const template = detectPdfTemplate(items); const records = parseGenericLandTaxPdf(items, template); const missingFields = [...new Set(records.flatMap((record) => record.meta.missingFields))];
+  for (const record of records) {
+    record.data.owner = ownerFallbackFromFileName(fileName, record.data.owner);
+    record.data.previousTransfers = sortPreviousTransfersOldestFirst(record.data.previousTransfers);
+  }
   const confidence = records.length ? (records.every((record) => record.meta.confidence === "high") ? "high" : records.some((record) => record.meta.confidence === "medium") ? "medium" : "low") : "low";
   if (DEBUG_PDF_PARSER) console.debug("[PDF parser]", { PDF: fileName, template, records, missing: missingFields });
   return { lands: records.map((record) => record.data), meta: { template, confidence, missingFields, records: records.map((record) => record.meta) } };
