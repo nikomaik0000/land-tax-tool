@@ -15,6 +15,7 @@ export function createDefaultReportConfiguration() {
       showLandZoning: false,
       zoningPrintLayout: "row",
       zoningTextMode: "full",
+      sharePrintLayout: "single-line",
       printLandColumns: { district: true, section: true, subsection: true, owner: true },
       showSelfUseTax: true,
       showTaxSummary: true,
@@ -64,6 +65,7 @@ export function createReportSettings({ container, state, onChange = () => {}, on
             <button class="btn btn-secondary" data-requery-zoning type="button">重新查詢使用分區</button>
           </div>
         </div>
+        <div class="settings-group"><h3>持分顯示</h3><div class="option-row compact-option-row">${radio("sharePrintLayout", "single-line", "單行")}${radio("sharePrintLayout", "two-line", "分行")}</div></div>
         <div class="settings-group"><h3>土地欄位</h3>
           ${[["district","區"],["section","段"],["subsection","小段"],["owner","所有權人"]].map(([key,label]) => `<label class="check-option"><input data-print-land-column="${key}" type="checkbox"${checked(state.displayOptions.printLandColumns[key])}><span>${label}</span></label>`).join("")}
         </div>

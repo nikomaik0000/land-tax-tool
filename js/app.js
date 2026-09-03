@@ -11,7 +11,7 @@ import { createHouse, ensureOwner, hasEffectiveHouseData, houseLabel, ownerName 
 import { orderLandsByDocuments, sortDocumentsByLand } from "./document-order.js";
 import { normalizeCity } from "./land-value-normalization.js";
 import { lookupZoningRecords } from "./zoning-source.js";
-import { applyLandZoningResults, setManualLandZoning } from "./land-zoning.js";
+import { applyLandZoningResults, getFinalTransferTaxes, isPublicFacilityLand, setManualLandZoning } from "./land-zoning.js";
 
 const $ = (selector) => document.querySelector(selector);
 const elements = {
@@ -134,6 +134,18 @@ function recalculateLand(land, row = null) {
   land.currentValue = calculateLandCurrentValue(land);
   document.querySelectorAll(`[data-land-id="${land.id}"] [data-current-value]`).forEach((output, index) => { output.textContent = formatMoney(land.previousTransfers[index]?.currentValue); });
   recalculateSummary();
+}
+
+function syncLandTaxDisplay(land) {
+  const exempt = isPublicFacilityLand(land);
+  document.querySelectorAll(`[data-land-id="${land.id}"][data-transfer-row]`).forEach((row, index) => {
+    const taxes = getFinalTransferTaxes(land, land.previousTransfers?.[index]);
+    const selfUseInput = row.querySelector('[data-transfer="selfUseTax"]');
+    const generalInput = row.querySelector('[data-transfer="generalTax"]');
+    if (selfUseInput) selfUseInput.value = formatMoney(taxes.finalSelfUseTax);
+    if (generalInput) generalInput.value = formatMoney(taxes.finalGeneralTax);
+    row.querySelectorAll(".public-facility-tax-hint").forEach((hint) => { hint.hidden = !exempt; });
+  });
 }
 
 function refresh() {
@@ -328,6 +340,7 @@ elements.landRows.addEventListener("input", (event) => {
     land[field] = numericFields.has(field) ? parseNumber(event.target.value) : (field === "houseId" ? event.target.value || null : event.target.value);
     if (field === "zoning") {
       setManualLandZoning(land, event.target.value);
+      syncLandTaxDisplay(land);
     }
     if (["district", "section", "subsection", "landNumber"].includes(field) && state.displayOptions.showLandZoning && !land.zoningManual) {
       land.zoningStatus = "stale";

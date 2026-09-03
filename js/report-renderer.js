@@ -2,6 +2,7 @@ import { state } from "./state.js";
 import { formatArea, formatLandNumber, formatMoney } from "./formatters.js?v=20260819-25";
 import { ownerName } from "./relationships.js";
 import { normalizeDistrict } from "./land-value-normalization.js";
+import { getFinalTransferTaxes, isPublicFacilityLand } from "./land-zoning.js";
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
 
@@ -11,7 +12,8 @@ function input(field, value, label, numeric = false, format = "") {
 }
 
 function transferInput(field, transfer, index, label, format = "") {
-  const value = format === "money" ? formatMoney(transfer[field] || "") : transfer[field] || "";
+  const raw = transfer[field] ?? "";
+  const value = format === "money" ? formatMoney(raw) : raw;
   return `<input data-transfer="${field}" data-transfer-index="${index}" ${format ? `data-format="${format}"` : ""} aria-label="${label}" ${field !== "date" ? 'inputmode="decimal"' : ""} value="${escapeHtml(value)}">`;
 }
 
@@ -36,15 +38,17 @@ function basicLandCells(land, rowSpan) {
     `;
 }
 
-function transferCells(transfer, index) {
+function transferCells(land, transfer, index) {
   if (!transfer) return `<td></td><td class="numeric"></td><td></td><td class="numeric"></td><td></td><td class="numeric"></td><td class="numeric"></td>`;
+  const taxes = getFinalTransferTaxes(land, transfer);
+  const hint = `<span class="table-cell-hint public-facility-tax-hint"${isPublicFacilityLand(land) ? "" : " hidden"}>使用分區含公共設施用地，稅額依設定歸零</span>`;
   return `<td><div class="share-fields">${transferInput("shareNumerator", transfer, index, "持分分子")}<span>/</span>${transferInput("shareDenominator", transfer, index, "持分分母")}</div></td>
     <td class="numeric"><output class="current-value" data-current-value>${formatMoney(transfer.currentValue)}</output></td>
     <td>${transferInput("date", transfer, index, "前次移轉日期")}</td>
     <td class="numeric">${transferInput("previousValue", transfer, index, "前次移轉現值", "money")}</td>
     <td class="transfer-index">${transferInput("priceIndex", transfer, index, "物價指數")}</td>
-    <td class="numeric">${transferInput("selfUseTax", transfer, index, "自用增值稅", "money")}</td>
-    <td class="numeric">${transferInput("generalTax", transfer, index, "一般增值稅", "money")}</td>`;
+    <td class="numeric public-facility-tax-cell">${transferInput("selfUseTax", { ...transfer, selfUseTax: taxes.finalSelfUseTax }, index, "自用增值稅", "money")}${hint}</td>
+    <td class="numeric public-facility-tax-cell">${transferInput("generalTax", { ...transfer, generalTax: taxes.finalGeneralTax }, index, "一般增值稅", "money")}${hint}</td>`;
 }
 
 export function renderFiles(container) {
@@ -66,7 +70,7 @@ export function renderLandTable(body, wrap, empty) {
     const rows = land.previousTransfers.length ? land.previousTransfers : [null];
     return rows.map((transfer, index) => `<tr data-land-id="${land.id}" data-transfer-row="${index}">
       ${index === 0 ? basicLandCells(land, rows.length) : ""}
-      ${transferCells(transfer, index)}
+      ${transferCells(land, transfer, index)}
       ${index === 0 ? `<td class="land-basic-cell" rowspan="${rows.length}"><div class="table-action"><button class="text-button" data-action="remove-land" type="button">刪除</button></div></td>` : ""}
     </tr>`);
   }).join("");

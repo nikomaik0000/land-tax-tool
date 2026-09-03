@@ -4,16 +4,15 @@ import { formatArea, formatLandNumber, formatMoney } from "./formatters.js?v=202
 import { hasEffectiveHouseData, ownerName } from "./relationships.js";
 import { formatZoningForPrint, getVisiblePrintColumns } from "./zoning-print.js";
 import { normalizeDistrict } from "./land-value-normalization.js";
+import { getFinalTransferTaxes } from "./land-zoning.js";
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
 })[character]);
 
-const fraction = (numerator, denominator) => `${Number(numerator) || 0} / ${Number(denominator) || 0}`;
-
-export function formatShareForPrint(numerator, denominator) {
+export function formatShareForPrint(numerator, denominator, sharePrintLayout = "single-line") {
   const first = Number(numerator) || 0; const second = Number(denominator) || 0;
-  return second >= 100000
+  return sharePrintLayout === "two-line"
     ? `<span class="report-share report-share-two-line"><span>${first} /</span><span>${second}</span></span>`
     : `<span class="report-share report-share-single-line">${first} / ${second}</span>`;
 }
@@ -53,13 +52,14 @@ function transferCells(state, land, transfer, index, rowSpan) {
   if (!transfer) {
     return `<td></td><td class="report-money"></td><td></td><td class="report-money"></td><td></td>${showSelfUseTax ? '<td class="report-money"></td>' : ""}<td class="report-money"></td>${zoningCell}`;
   }
-  return `<td>${formatShareForPrint(transfer.shareNumerator ?? land.shareNumerator, transfer.shareDenominator ?? land.shareDenominator)}</td>
+  const taxes = getFinalTransferTaxes(land, transfer);
+  return `<td class="report-share-cell">${formatShareForPrint(transfer.shareNumerator ?? land.shareNumerator, transfer.shareDenominator ?? land.shareDenominator, state.displayOptions.sharePrintLayout)}</td>
     <td class="report-money report-current-value">${formatMoney(transfer.currentValue)}</td>
     <td>${escapeHtml(transfer.date)}</td>
     <td class="report-money">${formatMoney(transfer.previousValue)}</td>
     <td>${escapeHtml(transfer.priceIndex || "")}</td>
-    ${showSelfUseTax ? `<td class="report-money">${formatMoney(transfer.selfUseTax)}</td>` : ""}
-    <td class="report-money">${formatMoney(transfer.generalTax)}</td>
+    ${showSelfUseTax ? `<td class="report-money">${formatMoney(taxes.finalSelfUseTax)}</td>` : ""}
+    <td class="report-money">${formatMoney(taxes.finalGeneralTax)}</td>
     ${zoningCell}`;
 }
 
@@ -81,7 +81,7 @@ function houseRow(state, house) {
   const trailing = columns.length - currentIndex - 1;
   return `<tr class="report-house-row">
     <td colspan="${shareIndex}" class="report-house-address">房屋座落：${escapeHtml(house.address || "—")}</td>
-    <td class="report-house-share">${fraction(house.shareNumerator, house.shareDenominator)}</td>
+    <td class="report-house-share">${formatShareForPrint(house.shareNumerator, house.shareDenominator, state.displayOptions.sharePrintLayout)}</td>
     <td class="report-money report-current-value">${formatMoney(house.currentValue)}</td>
     ${trailing ? `<td colspan="${trailing}"></td>` : ""}
   </tr>`;
@@ -232,7 +232,7 @@ export function renderA4Report(state) {
       <h2>${escapeHtml(state.caseName || "土地增值稅試算")}</h2>
     </header>
 
-    <table class="a4-land-table ${showSelfUseTax ? "show-self-use" : "hide-self-use"}">
+    <table class="a4-land-table share-layout-${state.displayOptions.sharePrintLayout === "two-line" ? "two-line" : "single-line"} ${showSelfUseTax ? "show-self-use" : "hide-self-use"}">
       <colgroup>
         ${columns.map((column) => `<col class="${column.className}">`).join("")}
       </colgroup>

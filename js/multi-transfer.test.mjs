@@ -42,8 +42,11 @@ assert.deepEqual(calculateTransferTaxTotals([land]), { selfUseTax: 52025, genera
 const state = { caseName: "測試", lands: [{ ...land, id: "land", currentValue: calculateLandCurrentValue(land) }], owners: [], houses: [], house: {}, caseCurrentValue: 399957, totalLandCurrentValue: 399957, selectedClauses: [], customNotes: [], displayOptions: { showSelfUseTax: true, showLandZoning: false, zoningPrintLayout: "row", zoningTextMode: "full", printLandColumns: {}, showTaxSummary: false, taxSummaryItems: {} }, giftTax: { enabled: false } };
 const html = renderA4Report(state).html;
 assert.match(html, />1 \/ 15</);
-for (const numerator of [91, 190, 367]) assert.match(html, new RegExp(`<span>${numerator} \\/<\\/span><span>144000<\\/span>`));
+for (const numerator of [91, 190, 367]) assert.match(html, new RegExp(`report-share-single-line">${numerator} \\/ 144000<\\/span>`));
 assert.equal((html.match(/report-current-value/g) ?? []).length, 4, "each transfer renders its own current value");
+const twoLineHtml = renderA4Report({ ...state, displayOptions: { ...state.displayOptions, sharePrintLayout: "two-line" } }).html;
+for (const numerator of [91, 190, 367]) assert.match(twoLineHtml, new RegExp(`<span>${numerator} \\/<\\/span><span>144000<\\/span>`));
+assert.match(twoLineHtml, /<span>1 \/<\/span><span>15<\/span>/);
 
 const legacySingle = migrateTransferShares({ shareNumerator: 2, shareDenominator: 7, previousTransfers: [{ date: "100年1月" }] });
 assert.deepEqual([legacySingle.previousTransfers[0].shareNumerator, legacySingle.previousTransfers[0].shareDenominator, legacySingle.shareNeedsReview], [2, 7, false]);
@@ -52,10 +55,11 @@ assert.equal(legacyMultiple.shareNeedsReview, true);
 assert.equal(legacyMultiple.previousTransfers[1].shareNumerator, null, "a legacy land share must not be copied to every transfer");
 assert.ok(compareRocYearMonth("081年09月", "113年12月") < 0);
 assert.deepEqual(sortPreviousTransfersOldestFirst([{ date: "" }, { date: "112年5月" }, { date: "bad" }, { date: "66年10月" }]).map((transfer) => transfer.date), ["66年10月", "112年5月", "", "bad"]);
-assert.match(formatShareForPrint(91, 144000), /report-share-two-line/);
-assert.match(formatShareForPrint(190, 144000), /report-share-two-line/);
-assert.match(formatShareForPrint(367, 144000), /report-share-two-line/);
+assert.match(formatShareForPrint(91, 144000), /report-share-single-line/);
+assert.match(formatShareForPrint(190, 144000), /report-share-single-line/);
+assert.match(formatShareForPrint(367, 144000), /report-share-single-line/);
 assert.match(formatShareForPrint(1, 15), /report-share-single-line/);
+assert.match(formatShareForPrint(1, 15, "two-line"), /report-share-two-line/);
 
 const taipeiLand = { area: 30, announcedValue: 448000, previousTransfers: [
   { date: "081年09月", previousValue: 120000, shareNumerator: 112, shareDenominator: 14400, priceIndex: 159.7, currentValue: 104533, selfUseTax: 5896, generalTax: 12835 },

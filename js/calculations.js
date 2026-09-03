@@ -1,4 +1,5 @@
 import { giftTaxConfig } from "./gift-tax-config.js?v=20260818-16";
+import { getFinalTransferTaxes } from "./land-zoning.js";
 
 function finiteNumber(value) {
   const number = Number(value);
@@ -77,8 +78,9 @@ export function calculateCaseCurrentValue(lands, house) {
 export function calculateTransferTaxTotals(lands) {
   return (Array.isArray(lands) ? lands : []).reduce((totals, land) => {
     for (const transfer of land.previousTransfers ?? []) {
-      totals.selfUseTax += Math.round(finiteNumber(transfer.selfUseTax));
-      totals.generalTax += Math.round(finiteNumber(transfer.generalTax));
+      const taxes = getFinalTransferTaxes(land, transfer);
+      totals.selfUseTax += Math.round(finiteNumber(taxes.finalSelfUseTax));
+      totals.generalTax += Math.round(finiteNumber(taxes.finalGeneralTax));
     }
     return totals;
   }, { selfUseTax: 0, generalTax: 0 });
@@ -116,8 +118,9 @@ export function calculateTaxSummaryByOwner(state) {
     const group = ensure(land.ownerId); if (!group) continue;
     group.landCount += 1;
     for (const transfer of land.previousTransfers ?? []) {
-      group.selfUseTax += Math.round(finiteNumber(transfer.selfUseTax));
-      group.generalTax += Math.round(finiteNumber(transfer.generalTax));
+      const taxes = getFinalTransferTaxes(land, transfer);
+      group.selfUseTax += Math.round(finiteNumber(taxes.finalSelfUseTax));
+      group.generalTax += Math.round(finiteNumber(taxes.finalGeneralTax));
     }
   }
   const countedHouses = new Set();

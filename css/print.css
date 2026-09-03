@@ -52,6 +52,7 @@
 .report-share { display: inline-flex; align-items: center; justify-content: center; }
 .report-share-single-line { white-space: nowrap; }
 .report-share-two-line { flex-direction: column; line-height: 1.12; white-space: nowrap; }
+.a4-land-table.share-layout-single-line .report-share-cell { white-space: nowrap; overflow-wrap: normal; }
 .a4-land-table .report-total-row td { color: var(--print-black); font-weight: 600; border-top: 2px solid var(--print-black); }
 .orientation-portrait .a4-land-table .r-district { width: 4%; }
 .orientation-portrait .a4-land-table .r-section { width: 5%; }
@@ -60,7 +61,8 @@
 .orientation-portrait .a4-land-table .r-area { width: 7%; }
 .orientation-portrait .a4-land-table .r-owner { width: 6%; }
 .orientation-portrait .a4-land-table .r-announced { width: 8%; }
-.orientation-portrait .a4-land-table .r-share { width: 7%; }
+.orientation-portrait .a4-land-table.share-layout-single-line .r-share { width: 9%; }
+.orientation-portrait .a4-land-table.share-layout-two-line .r-share { width: 6%; }
 .orientation-portrait .a4-land-table .r-current { width: 10%; }
 .orientation-portrait .a4-land-table .r-date { width: 8%; }
 .orientation-portrait .a4-land-table .r-previous { width: 8%; }
@@ -74,7 +76,8 @@
 .orientation-landscape .a4-land-table .r-area { width: 7%; }
 .orientation-landscape .a4-land-table .r-owner { width: 7%; }
 .orientation-landscape .a4-land-table .r-announced { width: 8%; }
-.orientation-landscape .a4-land-table .r-share { width: 7%; }
+.orientation-landscape .a4-land-table.share-layout-single-line .r-share { width: 9%; }
+.orientation-landscape .a4-land-table.share-layout-two-line .r-share { width: 6%; }
 .orientation-landscape .a4-land-table .r-current { width: 10%; }
 .orientation-landscape .a4-land-table .r-date { width: 8%; }
 .orientation-landscape .a4-land-table .r-previous { width: 8%; }

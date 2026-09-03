@@ -3,6 +3,7 @@ import { formatLandNumber } from "./formatters.js?v=20260819-25";
 import { calculateTaxSummaryByOwner, calculateTotalDeedTax } from "./calculations.js";
 import { hasEffectiveHouseData, ownerName } from "./relationships.js";
 import { normalizeDistrict } from "./land-value-normalization.js";
+import { getFinalTransferTaxes } from "./land-zoning.js";
 
 const EXCELJS_URL = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
 const COLORS = { black: "FF000000", dark: "FF333333", line: "FF999999", white: "FFFFFFFF" };
@@ -35,12 +36,13 @@ const columnLetter = (index) => {
 };
 
 export function mainTransferValues(land, transfer) {
+  const taxes = getFinalTransferTaxes(land, transfer);
   return {
     share: shareText(transfer?.shareNumerator ?? land.shareNumerator, transfer?.shareDenominator ?? land.shareDenominator),
     currentValue: numericOrNull(transfer?.currentValue ?? land.currentValue),
     date: transfer?.date || null,
     previousValue: numericOrNull(transfer?.previousValue), priceIndex: numericOrNull(transfer?.priceIndex),
-    selfUseTax: numericOrNull(transfer?.selfUseTax), generalTax: numericOrNull(transfer?.generalTax)
+    selfUseTax: numericOrNull(taxes.finalSelfUseTax), generalTax: numericOrNull(taxes.finalGeneralTax)
   };
 }
 
