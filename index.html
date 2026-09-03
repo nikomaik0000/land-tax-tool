@@ -64,6 +64,16 @@
       </div>
     </section>
 
+    <section class="section" aria-labelledby="excel-upload-title">
+      <div class="section-heading"><h2 id="excel-upload-title">Excel 匯入</h2><p>支援 .xls / .xlsx；匯入後直接進入同一份土地資料確認與試算流程。</p></div>
+      <div id="excelUploadZone" class="upload-zone">
+        <p class="upload-title">選擇土地資料 Excel</p><p>可點擊選擇，亦可拖曳至此</p>
+        <label class="btn btn-secondary file-picker" for="vatExcelFile">選擇 Excel</label>
+        <input id="vatExcelFile" class="visually-hidden" type="file" accept=".xls,.xlsx">
+      </div>
+      <p id="excelImportStatus" class="parse-status" aria-live="polite"></p>
+    </section>
+
     <section class="section" aria-labelledby="land-title">
       <div class="section-heading section-heading-inline">
         <div>
@@ -127,6 +137,6 @@
   </main>
 
   <style id="dynamicPrintPage">@page { size: A4 landscape; margin: 8mm; }</style>
-  <script src="js/app.js?v=20260903-4" type="module"></script>
+  <script src="js/app.js?v=20260903-5" type="module"></script>
 </body>
 </html>

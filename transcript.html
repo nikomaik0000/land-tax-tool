@@ -52,6 +52,10 @@
           <input id="enableTranscriptTax" type="checkbox">
           <span>試算土地增值稅</span>
         </label>
+        <label class="check-option transcript-tax-option">
+          <input id="enableTranscriptZoning" type="checkbox">
+          <span>帶入土地使用分區</span>
+        </label>
       </div>
       <p id="transcriptStatus" class="parse-status" aria-live="polite">尚未上傳謄本 PDF。</p>
       <div id="cpiUploadBlock" class="cpi-upload-block" hidden>
@@ -82,12 +86,13 @@
         <table class="land-table">
           <colgroup>
             <col class="col-sequence"><col class="col-district"><col class="col-section"><col class="col-subsection"><col class="col-land-number">
+            <col class="col-zoning" data-transcript-zoning-column hidden>
             <col class="col-area"><col class="col-owner"><col class="col-announced"><col class="col-share">
             <col class="col-current"><col class="col-transfer-date"><col class="col-transfer-value"><col class="col-index">
             <col class="col-tax"><col class="col-tax"><col class="col-action">
           </colgroup>
           <thead><tr>
-            <th>次序</th><th>區</th><th>段</th><th>小段</th><th>地號</th><th>面積</th><th>所有權人</th>
+            <th>次序</th><th>區</th><th>段</th><th>小段</th><th>地號</th><th data-transcript-zoning-column hidden>使用分區</th><th>面積</th><th>所有權人</th>
             <th>公告現值</th><th>持分</th><th>總現值</th><th>前次移轉日期</th><th>前次移轉現值</th>
             <th>物價指數</th><th>自用增值稅</th><th>一般增值稅</th><th>操作</th>
           </tr></thead>
@@ -122,6 +127,6 @@
     </section>
   </main>
   <style id="transcriptDynamicPrintPage">@page { size: A4 landscape; margin: 8mm; }</style>
-  <script src="js/transcript-app.js?v=20260903-1" type="module"></script>
+  <script src="js/transcript-app.js?v=20260903-2" type="module"></script>
 </body>
 </html>

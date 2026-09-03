@@ -3,7 +3,7 @@ import { clearSessionState, saveSessionState } from "./session-state.js";
 import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260903-5";
 import { renderFiles, renderLandTable } from "./report-renderer.js?v=20260903-4";
 import { formatArea, formatLandNumber, formatMoney, parseFormattedNumber } from "./formatters.js?v=20260819-25";
-import { calculateCaseCurrentValue, calculateGiftTax, calculateHouseCurrentValue, calculateHouseOwnerDeedTax, calculateLandCurrentValue, calculateTransferCurrentValue, calculateTotalDeedTax, calculateTotalHouseCurrentValue, calculateTotalLandCurrentValue, calculateTransferTaxTotals } from "./calculations.js";
+import { calculateCaseCurrentValue, calculateGiftTax, calculateHouseCurrentValue, calculateHouseOwnerDeedTax, calculateLandCurrentValue, calculateTransferCurrentValue, calculateTotalDeedTax, calculateTotalHouseCurrentValue, calculateTotalLandCurrentValue, calculateTransferTaxTotals } from "./calculations.js?v=20260903-2";
 import { renderA4Report } from "./a4-report-renderer.js?v=20260903-4";
 import { exportExcel } from "./excel-export.js?v=20260903-4";
 import { createReportSettings } from "./report-settings.js";
@@ -12,6 +12,10 @@ import { orderLandsByDocuments, sortDocumentsByLand } from "./document-order.js"
 import { normalizeCity } from "./land-value-normalization.js";
 import { lookupZoningRecords } from "./zoning-source.js";
 import { applyLandZoningResults, getFinalTransferTaxes, isPublicFacilityLand, setManualLandZoning } from "./land-zoning.js";
+import { fillMissingVatExcelCpi, readVatExcel } from "./vat-excel-import.js";
+import { loadCpiWorkbook } from "./cpi-lookup.js";
+import { loadDefaultCpiSource } from "./cpi-source.js";
+import { calculateLandValueIncrementTaxes } from "./land-value-increment-tax.js";
 
 const $ = (selector) => document.querySelector(selector);
 const elements = {
@@ -26,6 +30,7 @@ const elements = {
   reportPreview: $("#reportPreview"), a4PreviewViewport: $("#a4PreviewViewport"),
   reportOverflowWarning: $("#reportOverflowWarning"), dynamicPrintPage: $("#dynamicPrintPage")
 };
+elements.excelFile = $("#vatExcelFile"); elements.excelUploadZone = $("#excelUploadZone"); elements.excelImportStatus = $("#excelImportStatus");
 
 const numericFields = new Set(["area", "announcedValue", "shareNumerator", "shareDenominator"]);
 const parseNumber = parseFormattedNumber;
@@ -238,6 +243,34 @@ async function parseAll(filterStatus = null) {
   refresh();
   if (state.displayOptions.showLandZoning) await lookupLandZoning();
 }
+
+async function importVatExcel(file) {
+  if (!file || !/\.(?:xls|xlsx)$/i.test(file.name)) { elements.excelImportStatus.textContent = "請選擇 Excel (.xls / .xlsx) 檔案。"; return; }
+  elements.excelImportStatus.textContent = "讀取中…";
+  try {
+    const imported = await readVatExcel(file);
+    const cpi = await loadDefaultCpiSource({ parseWorkbook: loadCpiWorkbook }).then((result) => result.data).catch(() => null);
+    if (cpi) fillMissingVatExcelCpi(imported.lands, cpi);
+    for (const owner of imported.owners) ensureOwner(state, owner.name);
+    const calculationDate = new Date().toLocaleDateString("en-CA");
+    for (const parsed of imported.lands) {
+      const owner = ensureOwner(state, parsed.owner);
+      let land = createEmptyLand({ ...parsed, ownerId: owner?.id ?? null, owner: owner?.name ?? "", sourceFileId: null });
+      land.previousTransfers = calculateLandValueIncrementTaxes(land, calculationDate);
+      land.previousTransfers.forEach((transfer) => { transfer.currentValue = calculateTransferCurrentValue(land, transfer); });
+      land.currentValue = calculateLandCurrentValue(land); state.lands.push(land);
+    }
+    refresh();
+    if (state.displayOptions.showLandZoning) await lookupLandZoning();
+    const warning = imported.warnings.length ? `；${imported.warnings.join(" ")}` : "";
+    elements.excelImportStatus.textContent = `✓ 已匯入 ${imported.lands.length} 筆土地、${imported.transferCount} 筆前次移轉資料；略過 ${imported.skippedRows} 列${warning}`;
+  } catch (error) { elements.excelImportStatus.textContent = error.message || "Excel 匯入失敗。"; }
+}
+
+elements.excelFile.addEventListener("change", () => { void importVatExcel(elements.excelFile.files?.[0]); elements.excelFile.value = ""; });
+for (const name of ["dragenter", "dragover"]) elements.excelUploadZone.addEventListener(name, (event) => { event.preventDefault(); elements.excelUploadZone.classList.add("is-dragging"); });
+for (const name of ["dragleave", "drop"]) elements.excelUploadZone.addEventListener(name, (event) => { event.preventDefault(); elements.excelUploadZone.classList.remove("is-dragging"); });
+elements.excelUploadZone.addEventListener("drop", (event) => { void importVatExcel(droppedFiles(event.dataTransfer)[0]); });
 
 elements.pdfFiles.addEventListener("change", (event) => { addFiles(event.target.files); event.target.value = ""; });
 let uploadDragDepth = 0;

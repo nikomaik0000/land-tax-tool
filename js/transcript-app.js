@@ -9,6 +9,9 @@ import { exportExcel } from "./excel-export.js";
 import { createDefaultReportConfiguration, createReportSettings } from "./report-settings.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
 import { ensureOwner, migrateRelationshipState } from "./relationships.js";
+import { loadTaipeiZoningManifest, lookupZoningRecords } from "./zoning-source.js";
+import { applyLandZoningResults, getFinalTransferTaxes, isPublicFacilityLand, setManualLandZoning } from "./land-zoning.js";
+import { normalizeTranscriptZoningRecord } from "./transcript-zoning.js";
 
 const now = new Date();
 const defaultCalculationDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -40,7 +43,7 @@ migrateRelationshipState(transcriptState);
 const elements = {
   uploadZone: document.querySelector("#transcriptUploadZone"), fileInput: document.querySelector("#transcriptPdfFile"),
   fileList: document.querySelector("#transcriptFileList"), reparse: document.querySelector("#reparseTranscript"),
-  status: document.querySelector("#transcriptStatus"), enableTax: document.querySelector("#enableTranscriptTax"),
+  status: document.querySelector("#transcriptStatus"), enableTax: document.querySelector("#enableTranscriptTax"), enableZoning: document.querySelector("#enableTranscriptZoning"),
   cpiBlock: document.querySelector("#cpiUploadBlock"), cpiZone: document.querySelector("#cpiUploadZone"),
   cpiInput: document.querySelector("#cpiWorkbookFile"), cpiFileList: document.querySelector("#cpiFileList"), cpiSourceStatus: document.querySelector("#cpiSourceStatus"), cpiSourceLink: document.querySelector("#cpiSourceLink"), cpiAlternatives: document.querySelector("#cpiAlternativeSources"), restoreDefaultCpi: document.querySelector("#restoreDefaultCpi"), calculationDate: document.querySelector("#transcriptCalculationDate"), tableWrap: document.querySelector("#transcriptTableWrap"),
   tableEmpty: document.querySelector("#transcriptTableEmpty"), rows: document.querySelector("#transcriptLandRows"),
@@ -52,6 +55,7 @@ const elements = {
 let settingsController;
 let clearingPageState = false;
 let defaultCpiLoadPromise = null;
+let zoningLookupGeneration = 0;
 
 function savePageState() {
   if (clearingPageState) return;
@@ -96,12 +100,14 @@ function transferInput(land, field, label, format = "") {
 function renderRows() {
   elements.tableWrap.hidden = transcriptState.lands.length === 0;
   elements.tableEmpty.hidden = transcriptState.lands.length > 0;
-  elements.rows.innerHTML = transcriptState.lands.map((land) => `<tr data-land-id="${land.id}">
+  document.querySelectorAll("[data-transcript-zoning-column]").forEach((cell) => { cell.hidden = !transcriptState.displayOptions.showLandZoning; });
+  elements.rows.innerHTML = transcriptState.lands.map((land) => { const taxes = getFinalTransferTaxes(land, land.previousTransfers[0]); const exempt = isPublicFacilityLand(land); return `<tr data-land-id="${land.id}">
     <td class="sequence-cell"><output>${escapeHtml(formatSequence(land.rawSequence))}</output></td>
     <td class="district-cell">${input(land, "district", "區")}</td>
     <td class="section-cell">${input(land, "section", "段")}</td>
     <td class="subsection-cell">${input(land, "subsection", "小段")}</td>
     <td>${input(land, "landNumber", "地號", "land-number")}</td>
+    ${transcriptState.displayOptions.showLandZoning ? `<td class="zoning-cell"><textarea data-land-id="${land.id}" data-field="zoning" aria-label="使用分區" rows="2">${escapeHtml(land.zoning)}</textarea>${land.zoningStatus === "unsupported" ? '<span class="table-cell-hint">新北市目前尚未支援自動使用分區查詢</span>' : ""}</td>` : ""}
     <td>${input(land, "area", "面積", "area")}</td>
     <td>${input(land, "owner", "所有權人")}</td>
     <td class="numeric">${input(land, "announcedValue", "公告現值", "money")}</td>
@@ -110,10 +116,10 @@ function renderRows() {
     <td>${transferInput(land, "date", "前次移轉日期")}</td>
     <td class="numeric">${transferInput(land, "previousValue", "前次移轉現值", "money")}</td>
     <td class="transfer-index">${transferInput(land, "priceIndex", "物價指數")}</td>
-    <td class="numeric">${transferInput(land, "selfUseTax", "自用增值稅", "money")}</td>
-    <td class="numeric">${transferInput(land, "generalTax", "一般增值稅", "money")}</td>
+    <td class="numeric">${transferInput({ ...land, previousTransfers: [{ ...land.previousTransfers[0], selfUseTax: taxes.finalSelfUseTax }] }, "selfUseTax", "自用增值稅", "money")}${exempt ? '<span class="table-cell-hint">公共設施用地，稅額歸零</span>' : ""}</td>
+    <td class="numeric">${transferInput({ ...land, previousTransfers: [{ ...land.previousTransfers[0], generalTax: taxes.finalGeneralTax }] }, "generalTax", "一般增值稅", "money")}</td>
     <td><div class="table-action"><button class="text-button" data-action="remove-land" data-land-id="${land.id}" type="button">刪除</button></div></td>
-  </tr>`).join("");
+  </tr>`; }).join("");
   elements.total.textContent = formatMoney(calculateTotalLandCurrentValue(transcriptState.lands)) || "0";
   renderValidation();
   renderTranscriptOutput();
@@ -233,6 +239,28 @@ function applyCpiLookup() {
   renderRows();
 }
 
+async function lookupTranscriptZoning() {
+  if (!transcriptState.displayOptions.showLandZoning) return;
+  const candidates = transcriptState.lands.filter((land) => !land.zoningManual);
+  if (!candidates.length) return;
+  const generation = ++zoningLookupGeneration;
+  candidates.forEach((land) => { land.zoningStatus = land.city === "新北市" ? "unsupported" : "pending"; });
+  try {
+    const manifest = await loadTaipeiZoningManifest();
+    const taipeiDistrictNames = Object.values(manifest?.districts ?? {}).map((item) => item.name);
+    const normalized = candidates.map((land) => normalizeTranscriptZoningRecord(land, taipeiDistrictNames));
+    const results = await lookupZoningRecords(normalized);
+    if (generation !== zoningLookupGeneration || !transcriptState.displayOptions.showLandZoning) return;
+    candidates.forEach((land, index) => { if (!land.city && normalized[index].city) land.city = normalized[index].city; });
+    applyLandZoningResults(candidates, results);
+    if (transcriptState.tryLandTax) applyLandTaxCalculations(false);
+    renderRows();
+  } catch (error) {
+    candidates.forEach((land) => { if (!land.zoningManual) land.zoningStatus = "error"; });
+    console.error(error); renderRows();
+  }
+}
+
 async function handleCpiFile(file) {
   if (!file || !/\.(?:xls|xlsx)$/i.test(file.name)) {
     transcriptState.cpiStatus = "error";
@@ -288,9 +316,10 @@ async function processTranscript(file) {
   transcriptState.file = file; transcriptState.status = "loading"; transcriptState.error = ""; renderFile(); renderStatus();
   try {
     const result = await parseTranscriptPdfToLands(file);
-    transcriptState.lands = result.lands.map((land) => { const owner = ensureOwner(transcriptState, land.owner); land.ownerId = owner?.id ?? null; land.houseId = null; updateLandCurrentValue(land); return land; });
+    transcriptState.lands = result.lands.map((land) => { const owner = ensureOwner(transcriptState, land.owner); land.ownerId = owner?.id ?? null; land.houseId = null; land.zoning = String(land.zoning ?? ""); land.zonings = Array.isArray(land.zonings) ? land.zonings : []; land.zoningManual = false; updateLandCurrentValue(land); return land; });
     transcriptState.parseMeta = result.meta; transcriptState.status = "ready";
     if (transcriptState.cpiData) applyCpiLookup();
+    if (transcriptState.displayOptions.showLandZoning) void lookupTranscriptZoning();
   } catch (error) {
     transcriptState.lands = []; transcriptState.parseMeta = {}; transcriptState.status = "error";
     transcriptState.error = error instanceof Error ? error.message : "謄本 PDF 讀取失敗。";
@@ -314,6 +343,11 @@ elements.enableTax.addEventListener("change", () => {
   }
   else { renderValidation(); renderTranscriptOutput(); savePageState(); }
 });
+elements.enableZoning.addEventListener("change", () => {
+  transcriptState.displayOptions.showLandZoning = elements.enableZoning.checked;
+  renderRows();
+  if (transcriptState.displayOptions.showLandZoning) void lookupTranscriptZoning();
+});
 elements.calculationDate.value = transcriptState.calculationDate;
 elements.calculationDate.addEventListener("input", () => {
   transcriptState.calculationDate = elements.calculationDate.value;
@@ -329,13 +363,22 @@ for (const name of ["dragleave", "drop"]) elements.cpiZone.addEventListener(name
 elements.cpiZone.addEventListener("drop", (event) => handleCpiFile(event.dataTransfer?.files?.[0]));
 
 elements.rows.addEventListener("input", (event) => {
-  const control = event.target.closest("input[data-land-id]"); if (!control) return;
+  const control = event.target.closest("input[data-land-id], textarea[data-land-id]"); if (!control) return;
   const land = transcriptState.lands.find((item) => item.id === control.dataset.landId); if (!land) return;
   const isNumeric = ["money", "area"].includes(control.dataset.format);
   const value = isNumeric ? (control.value.trim() ? parseFormattedNumber(control.value) : null) : control.value;
   if (control.dataset.transferField) {
     land.previousTransfers[0][control.dataset.transferField] = value;
     if (control.dataset.transferField === "priceIndex") land.previousTransfers[0].cpiSource = "manual";
+  }
+  else if (control.dataset.field === "zoning") {
+    setManualLandZoning(land, value);
+    const taxes = getFinalTransferTaxes(land, land.previousTransfers[0]);
+    const row = control.closest("tr");
+    const selfUseInput = row?.querySelector('[data-transfer-field="selfUseTax"]');
+    const generalInput = row?.querySelector('[data-transfer-field="generalTax"]');
+    if (selfUseInput) selfUseInput.value = formatMoney(taxes.finalSelfUseTax);
+    if (generalInput) generalInput.value = formatMoney(taxes.finalGeneralTax);
   }
   else land[control.dataset.field] = value;
   updateLandCurrentValue(land);
@@ -367,7 +410,12 @@ elements.rows.addEventListener("click", (event) => {
   transcriptState.lands = transcriptState.lands.filter((land) => land.id !== button.dataset.landId); renderRows();
 });
 
-settingsController = createReportSettings({ container: elements.settings, state: transcriptState, onChange: () => { renderTranscriptOutput(); savePageState(); } });
+settingsController = createReportSettings({ container: elements.settings, state: transcriptState, onChange: () => {
+  elements.enableZoning.checked = transcriptState.displayOptions.showLandZoning;
+  renderRows();
+  if (transcriptState.displayOptions.showLandZoning) void lookupTranscriptZoning();
+  else { renderTranscriptOutput(); savePageState(); }
+} });
 elements.clearPageState.addEventListener("click", () => {
   if (!window.confirm("確定清除謄本整理頁目前資料？其他功能頁不受影響。")) return;
   clearingPageState = true;
@@ -387,6 +435,7 @@ elements.downloadExcel.addEventListener("click", async () => {
 });
 new ResizeObserver(updatePreviewScale).observe(elements.reportPreview);
 elements.enableTax.checked = transcriptState.tryLandTax;
+elements.enableZoning.checked = transcriptState.displayOptions.showLandZoning;
 elements.cpiBlock.hidden = !transcriptState.tryLandTax;
 elements.calculationDate.value = transcriptState.calculationDate;
 renderFile();
