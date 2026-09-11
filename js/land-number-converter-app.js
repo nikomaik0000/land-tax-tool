@@ -3,6 +3,7 @@ import { normalizeCity, normalizeDistrict } from "./land-value-normalization.js"
 import { applyLookup, createDistrictLookup, detectLandNumberHeaderRow, expandResultRows, parseWorkbookRecords } from "./land-number-converter-core.js";
 import { LAND_NUMBER_SOURCES, getLandNumberSourceByCity } from "./land-number-sources.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
+import { createReportPrinter, formatReportDate } from "./report-print.js";
 
 const STORAGE_KEY = "landTool.landNumberConverterState";
 const SHEETJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
@@ -22,12 +23,25 @@ const elements = {
   dropZone: document.querySelector("#converterDropZone"), fileInput: document.querySelector("#converterFile"), fileList: document.querySelector("#converterFileList"),
   resultSummary: document.querySelector("#converterResultSummary"), resultEmpty: document.querySelector("#converterResultEmpty"),
   resultWrap: document.querySelector("#converterResultWrap"), resultHeader: document.querySelector("#converterResultHeader"), resultRows: document.querySelector("#converterResultRows"),
-  actionMessage: document.querySelector("#converterActionMessage"), clear: document.querySelector("#clearConverterState"), download: document.querySelector("#downloadConverterResult")
+  actionMessage: document.querySelector("#converterActionMessage"), clear: document.querySelector("#clearConverterState"), download: document.querySelector("#downloadConverterResult"), print: document.querySelector("#printConverterResult")
 };
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const statusLabel = (status) => ({ found: "已找到", multiple: "一對多", "not-found": "找不到", pending: "待查詢" })[status] ?? "待查詢";
 const displaySection = (value, suffix) => value ? `${value}${suffix}` : "";
+
+const converterPrinter = createReportPrinter({
+  host: document.querySelector("#converterPrintReport"), pageStyle: document.querySelector("#converterPrintPage"),
+  getOrientation: () => document.querySelector('input[name="converterPrintOrientation"]:checked')?.value ?? "landscape",
+  getRowCount: () => expandResultRows(state.records, state.direction).length,
+  getReport: () => {
+    const target = state.direction === "old-to-new" ? "新" : "舊";
+    return { title: "新舊地號查詢結果", wide: true, metadata: [{ label: "查詢方向", value: state.direction === "old-to-new" ? "舊地號 → 新地號" : "新地號 → 舊地號" }, { label: "產生日期", value: formatReportDate() }], rows: expandResultRows(state.records, state.direction), columns: [
+      { label: "原縣市", value: (item) => item.record.city }, { label: "原區", value: (item) => `${item.record.district}區` }, { label: "原段", value: (item) => displaySection(item.record.section, "段") }, { label: "原小段", value: (item) => displaySection(item.record.subsection, "小段") }, { label: "原地號", value: (item) => formatLandNumber(item.record.landNumber) }, { label: "查詢狀態", value: (item) => statusLabel(item.status) },
+      { label: `${target}縣市`, value: (item) => item.landNumber ? item.city : "" }, { label: `${target}區`, key: "district" }, { label: `${target}段`, value: (item) => displaySection(item.section, "段") }, { label: `${target}小段`, value: (item) => displaySection(item.subsection, "小段") }, { label: `${target}地號`, value: (item) => formatLandNumber(item.landNumber) }
+    ] };
+  }
+});
 
 function savePageState() {
   if (clearing) return;
@@ -127,7 +141,7 @@ function renderResults() {
   const multiple = state.records.filter((record) => record.status === "multiple").length;
   const notFound = state.records.filter((record) => record.status === "not-found").length;
   elements.resultSummary.textContent = hasRows ? `原始 ${state.records.length.toLocaleString("zh-TW")} 筆，結果 ${expanded.length.toLocaleString("zh-TW")} 列；已找到 ${found.toLocaleString("zh-TW")} 筆、一對多 ${multiple.toLocaleString("zh-TW")} 筆、找不到 ${notFound.toLocaleString("zh-TW")} 筆。` : "尚未載入土地資料 Excel。";
-  elements.resultWrap.hidden = !hasRows; elements.resultEmpty.hidden = hasRows; elements.download.disabled = !hasRows;
+  elements.resultWrap.hidden = !hasRows; elements.resultEmpty.hidden = hasRows; elements.download.disabled = !hasRows; elements.print.disabled = !hasRows;
   savePageState();
 }
 
@@ -210,6 +224,7 @@ elements.fileInput.addEventListener("change", (event) => { handleQueryFile(event
 elements.fileList.addEventListener("click", (event) => { if (event.target.matches('[data-action="remove-query"]')) { state.queryFile = null; state.queryFileName = ""; state.workbookRows = []; state.records = []; state.loadedDistricts = []; renderFile(); renderResults(); } });
 elements.clear.addEventListener("click", () => { if (!window.confirm("確定清除新舊地號查詢頁目前資料？其他功能頁不受影響。")) return; clearing = true; clearSessionState(STORAGE_KEY); location.reload(); });
 elements.download.addEventListener("click", () => downloadResult().catch((error) => showMessage(error.message || "Excel 下載失敗。")));
+elements.print.addEventListener("click", converterPrinter.print);
 window.addEventListener("pagehide", savePageState);
 for (const eventName of ["dragover", "drop"]) document.addEventListener(eventName, (event) => { if ([...(event.dataTransfer?.types || [])].includes("Files")) event.preventDefault(); });
 

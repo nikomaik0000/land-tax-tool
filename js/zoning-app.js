@@ -3,6 +3,7 @@ import { normalizeCity } from "./land-value-normalization.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
 import { parseZoningWorkbookRecords } from "./zoning-core.js";
 import { loadTaipeiZoningManifest, lookupZoningRecords } from "./zoning-source.js";
+import { createReportPrinter, formatReportDate } from "./report-print.js";
 
 const STORAGE_KEY = "landTool.zoningState";
 const XLSX_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
@@ -23,6 +24,14 @@ function loadXlsx() {
 }
 function message(text) { $("#zoningMessage").textContent = text; $("#zoningMessage").hidden = !text; }
 function expanded() { return records.flatMap((record) => (record.matches?.length ? record.matches : [null]).map((result) => ({ record, result }))); }
+const zoningPrinter = createReportPrinter({
+  host: $("#zoningPrintReport"), pageStyle: $("#zoningPrintPage"),
+  getOrientation: () => document.querySelector('input[name="zoningPrintOrientation"]:checked')?.value ?? "landscape",
+  getRowCount: () => expanded().length,
+  getReport: () => ({ title: "土地使用分區查詢結果", wide: true, metadata: [{ label: "產生日期", value: formatReportDate() }], rows: expanded(), columns: [
+    { label: "縣市", value: ({ record }) => record.city }, { label: "區", value: ({ record }) => record.district ? `${record.district}區` : "" }, { label: "段", value: ({ record }) => record.section ? `${record.section}段` : "" }, { label: "小段", value: ({ record }) => record.subsection ? `${record.subsection}小段` : "" }, { label: "地號", value: ({ record }) => formatLandNumber(record.landNumber) }, { label: "土地類型", value: ({ result }) => result?.landType ?? "" }, { label: "使用分區", value: ({ result }) => result?.zoning ?? "", className: "report-long-text" }, { label: "使用地類別", value: ({ result }) => result?.landUse ?? "" }, { label: "查詢狀態", value: ({ record }) => statusText[record.status] }
+  ] })
+});
 function renderFile(status = "") { $("#zoningFileList").innerHTML = fileName ? `<div class="file-row"><span aria-hidden="true"></span><span class="file-name">${esc(fileName)}</span><span class="file-status">${esc(status || `✓ 已恢復 ${records.length.toLocaleString("zh-TW")} 筆`)}</span><button class="icon-button" data-remove-zoning-file type="button" aria-label="移除 Excel">×</button></div>` : ""; }
 
 function render() {
@@ -30,7 +39,7 @@ function render() {
   $("#zoningRows").innerHTML = rows.map(({ record, result }) => `<tr class="${["not-found", "unsupported"].includes(record.status) ? "is-not-found" : ""}"><td>${esc(record.city)}</td><td>${esc(record.district ? `${record.district}區` : "")}</td><td>${esc(record.section ? `${record.section}段` : "")}</td><td>${esc(record.subsection ? `${record.subsection}小段` : "")}</td><td>${esc(formatLandNumber(record.landNumber))}</td><td>${esc(result?.landType)}</td><td>${esc(result?.zoning)}</td><td>${esc(result?.landUse)}</td><td class="status-cell">${esc(statusText[record.status])}</td></tr>`).join("");
   const counts = Object.fromEntries(["found", "multiple", "not-found", "unsupported"].map((status) => [status, records.filter((record) => record.status === status).length]));
   $("#zoningResultSummary").textContent = hasRows ? `原始 ${records.length.toLocaleString("zh-TW")} 筆；已找到 ${counts.found.toLocaleString("zh-TW")} 筆、多分區 ${counts.multiple.toLocaleString("zh-TW")} 筆、找不到 ${counts["not-found"].toLocaleString("zh-TW")} 筆、新北尚未支援 ${counts.unsupported.toLocaleString("zh-TW")} 筆。` : "尚未載入土地資料 Excel。";
-  $("#zoningResultWrap").hidden = !hasRows; $("#zoningEmpty").hidden = hasRows; $("#downloadZoning").disabled = !hasRows; saveState();
+  $("#zoningResultWrap").hidden = !hasRows; $("#zoningEmpty").hidden = hasRows; $("#downloadZoning").disabled = !hasRows; $("#printZoning").disabled = !hasRows; saveState();
 }
 async function lookup() { records = await lookupZoningRecords(records); render(); }
 
@@ -56,7 +65,7 @@ function formatManifestDate(manifest) { const value = manifest.sourceUpdatedAt ?
 $("#fallbackCity").value = restored.fallbackCity === "新北市" ? "新北市" : "臺北市"; $("#fallbackCity").addEventListener("change", saveState);
 $("#zoningSourceAccordion").addEventListener("click", () => { const open = $("#zoningSourceAccordion").getAttribute("aria-expanded") !== "true"; $("#zoningSourceAccordion").setAttribute("aria-expanded", String(open)); $("#zoningSourceContent").hidden = !open; });
 $("#zoningFile").addEventListener("change", (event) => { handle(event.target.files[0]); event.target.value = ""; }); $("#zoningDropZone").addEventListener("dragover", (event) => event.preventDefault()); $("#zoningDropZone").addEventListener("drop", (event) => { event.preventDefault(); handle(event.dataTransfer.files[0]); });
-$("#downloadZoning").addEventListener("click", () => download().catch((error) => message(error.message))); $("#zoningFileList").addEventListener("click", (event) => { if (!event.target.matches("[data-remove-zoning-file]")) return; records = []; headers = []; fileName = ""; renderFile(); render(); });
+$("#downloadZoning").addEventListener("click", () => download().catch((error) => message(error.message))); $("#printZoning").addEventListener("click", zoningPrinter.print); $("#zoningFileList").addEventListener("click", (event) => { if (!event.target.matches("[data-remove-zoning-file]")) return; records = []; headers = []; fileName = ""; renderFile(); render(); });
 $("#clearZoning").addEventListener("click", () => { records = []; headers = []; fileName = ""; clearSessionState(STORAGE_KEY); renderFile(); message(""); render(); }); window.addEventListener("pagehide", saveState);
 
 loadTaipeiZoningManifest().then((manifest) => { const rows = Number(manifest.totalRows ?? manifest.rows ?? 0); $("#zoningSourceSummary").textContent = "✓ 臺北市"; $("#taipeiZoningDate").textContent = `資料更新：${formatManifestDate(manifest)}${rows ? `，${rows.toLocaleString("zh-TW")} 筆` : ""}`; }).catch((error) => message(error.message));

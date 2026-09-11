@@ -2,6 +2,7 @@ import { formatArea, formatLandNumber, formatMoney, parseFormattedNumber } from 
 import { LAND_VALUE_DATA, LAND_VALUE_SOURCES, getLandValueSource } from "./land-value-sources.js";
 import { buildLandValueDiagnosticKey, buildLandValueKey, compareLandValueRecord, normalizeCity, normalizeLandValueRecord, splitSectionAndSubsection } from "./land-value-normalization.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
+import { createReportPrinter, formatReportDate } from "./report-print.js";
 
 const SHEETJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 const SOURCE_IDS = Object.keys(LAND_VALUE_SOURCES);
@@ -37,7 +38,7 @@ const elements = {
   queryFileList: document.querySelector("#queryFileList"), resultSummary: document.querySelector("#resultSummary"), resultEmpty: document.querySelector("#resultEmpty"),
   tableWrap: document.querySelector("#resultTableWrap"), headerRow: document.querySelector("#resultHeaderRow"), rows: document.querySelector("#resultRows"), actionMessage: document.querySelector("#actionMessage"),
   showOriginal: document.querySelector("#showOriginalValue"), showOfficialPrice: document.querySelector("#showOfficialPrice"),
-  clearPageState: document.querySelector("#clearLandValuePageState"), download: document.querySelector("#downloadResult")
+  clearPageState: document.querySelector("#clearLandValuePageState"), download: document.querySelector("#downloadResult"), print: document.querySelector("#printLandValueResult")
 };
 
 let sheetJsPromise;
@@ -343,6 +344,19 @@ function statusLabel(status) {
   return ({ same: "相同", changed: "已變更", "not-found": "查無資料", "missing-city": "請指定縣市", "source-not-ready": "資料未載入", pending: "待比對" })[status] ?? "待比對";
 }
 
+const landValuePrinter = createReportPrinter({
+  host: document.querySelector("#landValuePrintReport"), pageStyle: document.querySelector("#landValuePrintPage"),
+  getOrientation: () => document.querySelector('input[name="landValuePrintOrientation"]:checked')?.value ?? "portrait",
+  getRowCount: () => state.records.length,
+  getReport: () => ({ title: "公告現值查詢結果", metadata: [{ label: "產生日期", value: formatReportDate() }], rows: state.records, columns: [
+    { label: "縣市", value: (record) => normalizeCity(record.city || state.fallbackCity) }, { label: "區", key: "district" }, { label: "段", key: "section" }, { label: "小段", key: "subsection" }, { label: "地號", value: (record) => formatLandNumber(record.landNumber) }, { label: "面積", value: (record) => formatArea(record.area) || "—", className: "report-number" },
+    ...(state.showOriginalValue ? [{ label: "原公告現值", value: (record) => formatMoney(record.originalAnnouncedValue) || "—", className: "report-number" }] : []),
+    { label: "最新公告現值", value: (record) => formatMoney(record.latestAnnouncedValue) || "—", className: "report-number" },
+    ...(state.showOfficialPrice ? [{ label: "公告地價", value: (record) => formatMoney(record.officialPrice) || "—", className: "report-number" }] : []),
+    { label: "查詢狀態", value: (record) => statusLabel(record.lookupStatus) }
+  ] })
+});
+
 function renderResults() {
   const hasRecords = state.records.length > 0; elements.tableWrap.hidden = !hasRecords; elements.resultEmpty.hidden = hasRecords;
   elements.headerRow.innerHTML = `<th>縣市</th><th>區</th><th>段</th><th>小段</th><th>地號</th><th>面積</th>${state.showOriginalValue ? "<th>原公告現值</th>" : ""}<th>最新公告現值</th>${state.showOfficialPrice ? "<th>公告地價</th>" : ""}<th>狀態</th>`;
@@ -357,6 +371,7 @@ function renderResults() {
   const notFound = state.records.filter((record) => record.lookupStatus === "not-found").length;
   elements.resultSummary.textContent = hasRecords ? `共 ${state.records.length.toLocaleString("zh-TW")} 筆；完成比對 ${ready.toLocaleString("zh-TW")} 筆、已變更 ${changed.toLocaleString("zh-TW")} 筆、查無資料 ${notFound.toLocaleString("zh-TW")} 筆。` : "尚未載入土地資料 Excel。";
   elements.download.disabled = !hasRecords;
+  elements.print.disabled = !hasRecords;
   savePageState();
 }
 
@@ -452,6 +467,7 @@ elements.clearPageState.addEventListener("click", () => {
   clearingPageState = true; clearSessionState(LAND_VALUE_STORAGE_KEY); location.reload();
 });
 elements.download.addEventListener("click", () => downloadResult().catch((error) => showActionMessage(error.message || "Excel 下載失敗。")));
+elements.print.addEventListener("click", landValuePrinter.print);
 window.addEventListener("pagehide", savePageState);
 for (const eventName of ["dragover", "drop"]) document.addEventListener(eventName, (event) => { if ([...(event.dataTransfer?.types || [])].includes("Files")) event.preventDefault(); });
 renderQueryFile();

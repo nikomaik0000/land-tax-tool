@@ -33,7 +33,6 @@
 .update-table td.status-cell { white-space: nowrap; }
 .update-table td.action-cell { width: 64px; }
 .result-display-option { margin: -6px 0 20px; }
-.result-actions { gap: 10px; margin-top: 22px; }
 .validation-message { margin: 18px 0 0; padding: 12px 14px; border: 1px solid var(--ui-border-strong); color: var(--ui-text); font-size: 12px; line-height: 1.7; }
 @media (max-width: 720px) {
   .source-grid { grid-template-columns: 1fr; }

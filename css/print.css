@@ -36,6 +36,14 @@
 .report-font-large .report-document { --report-table-size: 11.25px; --report-note-size: 10.75px; --report-title-size: 24px; --report-tax-size: 13px; }
 .report-header { margin-bottom: var(--header-gap); text-align: center; }
 .report-header h2 { margin: 0; color: var(--print-black); font-size: var(--report-title-size); font-weight: 600; letter-spacing: 0.08em; }
+.batch-report-host { display: none; }
+.report-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 1mm 6mm; margin-top: 2mm; color: var(--print-dark); font-size: 9.75px; }
+.report-table { width: 100%; table-layout: fixed; border: 1.5px solid var(--print-black); border-collapse: collapse; color: var(--print-dark); font-size: 10px; line-height: 1.4; }
+.report-table th,
+.report-table td { padding: 2.2mm 1.4mm; border: 1px solid var(--print-line); background: var(--print-white); text-align: center; vertical-align: middle; overflow-wrap: anywhere; word-break: break-word; }
+.report-table th { color: var(--print-black); font-weight: 600; }
+.report-table .report-number { text-align: right; white-space: nowrap; }
+.report-table .report-long-text { width: 28%; text-align: left; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
 .a4-land-table { width: 100%; table-layout: fixed; border: 1.5px solid var(--print-black); border-collapse: collapse; }
 .a4-land-table th,
 .a4-land-table td { padding: var(--report-cell-padding-y) 5px; border: 1px solid var(--print-line); overflow-wrap: anywhere; text-align: center; vertical-align: middle; line-height: var(--report-table-line-height); }
@@ -164,4 +172,11 @@
   }
   .a4-sheet.orientation-portrait { width: 194mm; max-width: 194mm; min-height: 281mm; }
   .a4-sheet.orientation-landscape { width: 281mm; max-width: 281mm; min-height: 194mm; }
+  body:has(.batch-report-host.is-print-ready) > *:not(.batch-report-host) { display: none !important; }
+  .batch-report-host.is-print-ready { display: block !important; width: 100%; margin: 0; padding: 0; background: var(--print-white); }
+  .batch-report-document { width: 100%; color: var(--print-dark); }
+  .batch-report-document .report-header { break-after: avoid; }
+  .report-table thead { display: table-header-group; }
+  .report-table tfoot { display: table-footer-group; }
+  .report-table tr { break-inside: avoid; page-break-inside: avoid; }
 }

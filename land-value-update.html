@@ -7,8 +7,9 @@
   <link rel="icon" href="./icon/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="css/style.css?v=20260820-3">
+  <link rel="stylesheet" href="css/style.css?v=20260911-1">
   <link rel="stylesheet" href="css/land-value-update.css?v=20260820-4">
+  <link rel="stylesheet" href="css/print.css?v=20260911-1">
 </head>
 <body>
   <main class="app-container">
@@ -82,12 +83,16 @@
         </table>
       </div>
       <p id="actionMessage" class="validation-message" hidden aria-live="polite"></p>
+      <fieldset class="print-settings"><legend>紙張方向</legend><label class="radio-option"><input name="landValuePrintOrientation" type="radio" value="portrait" checked><span>直向</span></label><label class="radio-option"><input name="landValuePrintOrientation" type="radio" value="landscape"><span>橫向</span></label></fieldset>
       <div class="actions result-actions">
         <button id="clearLandValuePageState" class="btn btn-secondary" type="button">清除目前資料</button>
         <button id="downloadResult" class="btn btn-primary" type="button" disabled>下載結果 Excel</button>
+        <button id="printLandValueResult" class="btn btn-primary" type="button" disabled>列印 / 儲存 PDF</button>
       </div>
     </section>
   </main>
-  <script src="js/land-value-update-app.js?v=20260820-4" type="module"></script>
+  <div id="landValuePrintReport" class="batch-report-host" aria-hidden="true"></div>
+  <style id="landValuePrintPage">@page { size: A4 portrait; margin: 8mm; }</style>
+  <script src="js/land-value-update-app.js?v=20260911-1" type="module"></script>
 </body>
 </html>

@@ -7,9 +7,10 @@
   <link rel="icon" href="./icon/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="css/style.css?v=20260827-1">
+  <link rel="stylesheet" href="css/style.css?v=20260911-1">
   <link rel="stylesheet" href="css/land-value-update.css?v=20260827-1">
   <link rel="stylesheet" href="css/land-number-converter.css?v=20260827-2">
+  <link rel="stylesheet" href="css/print.css?v=20260911-1">
 </head>
 <body>
   <main class="app-container">
@@ -83,12 +84,16 @@
       </div>
       <p id="converterActionMessage" class="validation-message" hidden aria-live="polite"></p>
       <p class="converter-footnote">部分特殊重測、分割、合併或未納入開放資料之案件，建議再至官方地政系統人工確認。</p>
+      <fieldset class="print-settings"><legend>紙張方向</legend><label class="radio-option"><input name="converterPrintOrientation" type="radio" value="portrait"><span>直向</span></label><label class="radio-option"><input name="converterPrintOrientation" type="radio" value="landscape" checked><span>橫向</span></label></fieldset>
       <div class="actions result-actions">
         <button id="clearConverterState" class="btn btn-secondary" type="button">清除目前資料</button>
-        <button id="downloadConverterResult" class="btn btn-primary" type="button" disabled>下載查詢結果 Excel</button>
+        <button id="downloadConverterResult" class="btn btn-primary" type="button" disabled>下載結果 Excel</button>
+        <button id="printConverterResult" class="btn btn-primary" type="button" disabled>列印 / 儲存 PDF</button>
       </div>
     </section>
   </main>
-  <script src="js/land-number-converter-app.js?v=20260827-2" type="module"></script>
+  <div id="converterPrintReport" class="batch-report-host" aria-hidden="true"></div>
+  <style id="converterPrintPage">@page { size: A4 landscape; margin: 8mm; }</style>
+  <script src="js/land-number-converter-app.js?v=20260911-1" type="module"></script>
 </body>
 </html>
