@@ -12,6 +12,7 @@ import { ensureOwner, migrateRelationshipState } from "./relationships.js";
 import { loadTaipeiZoningManifest, lookupZoningRecords } from "./zoning-source.js";
 import { applyLandZoningResults, getFinalTransferTaxes, isPublicFacilityLand, setManualLandZoning } from "./land-zoning.js";
 import { normalizeTranscriptZoningRecord } from "./transcript-zoning.js";
+import { setupCaseFileActions } from "./case-file.js";
 
 const now = new Date();
 const defaultCalculationDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -24,15 +25,16 @@ const transcriptDefaults = {
   totalLandCurrentValue: 0, caseCurrentValue: 0, ...createDefaultReportConfiguration()
 };
 const restoredTranscript = loadSessionState(TRANSCRIPT_STORAGE_KEY) ?? {};
+if (restoredTranscript.cpiData) restoredTranscript.cpiData = { ...restoredTranscript.cpiData, values: new Map(restoredTranscript.cpiData.values ?? []), monthColumns: new Map(restoredTranscript.cpiData.monthColumns ?? []) };
 export const transcriptState = {
   ...transcriptDefaults,
   ...restoredTranscript,
   file: null,
   cpiFile: null,
-  cpiData: null,
-  cpiStatus: "idle",
-  cpiMessage: "",
-  cpiSource: { status: "idle", type: null, sourceName: "", loadedAt: null },
+  cpiData: restoredTranscript.cpiData ?? null,
+  cpiStatus: restoredTranscript.cpiStatus ?? "idle",
+  cpiMessage: restoredTranscript.cpiMessage ?? "",
+  cpiSource: restoredTranscript.cpiSource ?? { status: "idle", type: null, sourceName: "", loadedAt: null },
   status: restoredTranscript.lands?.length ? "ready" : "idle",
   house: { ...transcriptDefaults.house, ...(restoredTranscript.house ?? {}) },
   displayOptions: { ...transcriptDefaults.displayOptions, ...(restoredTranscript.displayOptions ?? {}), taxSummaryItems: { ...transcriptDefaults.displayOptions.taxSummaryItems, ...(restoredTranscript.displayOptions?.taxSummaryItems ?? {}) } },
@@ -50,7 +52,7 @@ const elements = {
   validation: document.querySelector("#transcriptValidation"), total: document.querySelector("#transcriptTotalCurrentValue"),
   settingsSection: document.querySelector("#transcriptReportSettingsSection"), settings: document.querySelector("#transcriptReportSettings"),
   previewSection: document.querySelector("#transcriptPreviewSection"), downloadExcel: document.querySelector("#transcriptDownloadExcel"), printReport: document.querySelector("#transcriptPrintReport"),
-  reportWarning: document.querySelector("#transcriptReportWarning"), reportPreview: document.querySelector("#transcriptReportPreview"), a4Viewport: document.querySelector("#transcriptA4Viewport"), a4Sheet: document.querySelector("#transcriptA4Sheet"), dynamicPrintPage: document.querySelector("#transcriptDynamicPrintPage"), clearPageState: document.querySelector("#clearTranscriptPageState")
+  reportWarning: document.querySelector("#transcriptReportWarning"), reportPreview: document.querySelector("#transcriptReportPreview"), a4Viewport: document.querySelector("#transcriptA4Viewport"), a4Sheet: document.querySelector("#transcriptA4Sheet"), dynamicPrintPage: document.querySelector("#transcriptDynamicPrintPage"), saveCase: document.querySelector("#saveTranscriptCase"), importCase: document.querySelector("#importTranscriptCase"), clearPageState: document.querySelector("#clearTranscriptPageState")
 };
 let settingsController;
 let clearingPageState = false;
@@ -59,8 +61,27 @@ let zoningLookupGeneration = 0;
 
 function savePageState() {
   if (clearingPageState) return;
-  const { file, cpiFile, cpiData, cpiSource, ...snapshot } = transcriptState;
+  const { file, cpiFile, ...snapshot } = transcriptState;
+  if (transcriptState.cpiData) snapshot.cpiData = { ...transcriptState.cpiData, values: [...transcriptState.cpiData.values], monthColumns: [...transcriptState.cpiData.monthColumns] };
   saveSessionState(TRANSCRIPT_STORAGE_KEY, snapshot);
+}
+
+export function serializeTranscriptCase() {
+  const { file, cpiFile, ...snapshot } = transcriptState;
+  const copy = structuredClone(snapshot);
+  if (transcriptState.cpiData) copy.cpiData = { ...transcriptState.cpiData, values: [...transcriptState.cpiData.values], monthColumns: [...transcriptState.cpiData.monthColumns] };
+  return copy;
+}
+
+export function restoreTranscriptCase(snapshot) {
+  const restored = structuredClone(snapshot);
+  if (restored.cpiData) restored.cpiData = { ...restored.cpiData, values: new Map(restored.cpiData.values ?? []), monthColumns: new Map(restored.cpiData.monthColumns ?? []) };
+  Object.assign(transcriptState, restored, { file: null, cpiFile: null, status: restored.lands?.length ? "ready" : "idle" });
+  elements.enableTax.checked = transcriptState.tryLandTax;
+  elements.enableZoning.checked = transcriptState.displayOptions.showLandZoning;
+  elements.cpiBlock.hidden = !transcriptState.tryLandTax;
+  elements.calculationDate.value = transcriptState.calculationDate;
+  renderFile(); renderStatus(); renderCpiFile(); renderRows(); savePageState();
 }
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
@@ -416,6 +437,11 @@ settingsController = createReportSettings({ container: elements.settings, state:
   if (transcriptState.displayOptions.showLandZoning) void lookupTranscriptZoning();
   else { renderTranscriptOutput(); savePageState(); }
 } });
+setupCaseFileActions({
+  pageType: "transcript", label: "謄本整理", saveButton: elements.saveCase, importButton: elements.importCase,
+  serialize: serializeTranscriptCase, restore: restoreTranscriptCase, hasData: () => transcriptState.lands.length > 0,
+  caseName: () => transcriptState.caseName
+});
 elements.clearPageState.addEventListener("click", () => {
   if (!window.confirm("確定清除謄本整理頁目前資料？其他功能頁不受影響。")) return;
   clearingPageState = true;
@@ -442,4 +468,4 @@ renderFile();
 renderStatus();
 renderCpiFile();
 renderRows();
-if (transcriptState.tryLandTax) void loadDefaultCpiData();
+if (transcriptState.tryLandTax && !transcriptState.cpiData) void loadDefaultCpiData();

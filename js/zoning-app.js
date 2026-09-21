@@ -4,6 +4,7 @@ import { clearSessionState, loadSessionState, saveSessionState } from "./session
 import { parseZoningWorkbookRecords } from "./zoning-core.js";
 import { loadTaipeiZoningManifest, lookupZoningRecords } from "./zoning-source.js";
 import { createReportPrinter, formatReportDate } from "./report-print.js";
+import { setupCaseFileActions } from "./case-file.js";
 
 const STORAGE_KEY = "landTool.zoningState";
 const XLSX_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
@@ -16,7 +17,14 @@ const $ = (selector) => document.querySelector(selector);
 const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const statusText = { found: "已找到", multiple: "多分區", "not-found": "找不到", unsupported: "新北尚未支援", pending: "待查詢" };
 
-function saveState() { saveSessionState(STORAGE_KEY, { records, headers, fileName, fallbackCity: $("#fallbackCity").value }); }
+function saveState() { saveSessionState(STORAGE_KEY, { records, headers, fileName, fallbackCity: $("#fallbackCity").value, orientation: document.querySelector('input[name="zoningPrintOrientation"]:checked')?.value ?? "landscape" }); }
+export function serializeZoningCase() { return { records: structuredClone(records), headers: structuredClone(headers), fileName, fallbackCity: $("#fallbackCity").value, orientation: document.querySelector('input[name="zoningPrintOrientation"]:checked')?.value ?? "landscape" }; }
+export function restoreZoningCase(snapshot) {
+  records = structuredClone(snapshot.records ?? []); headers = structuredClone(snapshot.headers ?? []); fileName = String(snapshot.fileName ?? "");
+  $("#fallbackCity").value = snapshot.fallbackCity === "新北市" ? "新北市" : "臺北市";
+  const orientation = document.querySelector(`input[name="zoningPrintOrientation"][value="${snapshot.orientation}"]`); if (orientation) orientation.checked = true;
+  renderFile(); message(""); render(); saveState();
+}
 function loadXlsx() {
   if (globalThis.XLSX) return Promise.resolve(globalThis.XLSX);
   xlsxPromise ??= new Promise((resolve, reject) => { const script = document.createElement("script"); script.src = XLSX_URL; script.onload = () => globalThis.XLSX ? resolve(globalThis.XLSX) : reject(new Error("Excel 元件載入失敗。")); script.onerror = () => reject(new Error("無法載入 Excel 元件。")); document.head.append(script); });
@@ -63,6 +71,9 @@ async function download() {
 function formatManifestDate(manifest) { const value = manifest.sourceUpdatedAt ?? manifest.generatedAt; if (!value) return "依官方最新版本"; const date = new Date(value); return Number.isNaN(date.valueOf()) ? String(value) : new Intl.DateTimeFormat("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).format(date); }
 
 $("#fallbackCity").value = restored.fallbackCity === "新北市" ? "新北市" : "臺北市"; $("#fallbackCity").addEventListener("change", saveState);
+const restoredZoningOrientation = document.querySelector(`input[name="zoningPrintOrientation"][value="${restored.orientation}"]`); if (restoredZoningOrientation) restoredZoningOrientation.checked = true;
+document.querySelectorAll('input[name="zoningPrintOrientation"]').forEach((input) => input.addEventListener("change", saveState));
+setupCaseFileActions({ pageType: "zoning", label: "使用分區查詢", saveButton: $("#saveZoningCase"), importButton: $("#importZoningCase"), serialize: serializeZoningCase, restore: restoreZoningCase, hasData: () => records.length > 0, caseName: () => fileName.replace(/\.(?:xls|xlsx)$/i, "") });
 $("#zoningSourceAccordion").addEventListener("click", () => { const open = $("#zoningSourceAccordion").getAttribute("aria-expanded") !== "true"; $("#zoningSourceAccordion").setAttribute("aria-expanded", String(open)); $("#zoningSourceContent").hidden = !open; });
 $("#zoningFile").addEventListener("change", (event) => { handle(event.target.files[0]); event.target.value = ""; }); $("#zoningDropZone").addEventListener("dragover", (event) => event.preventDefault()); $("#zoningDropZone").addEventListener("drop", (event) => { event.preventDefault(); handle(event.dataTransfer.files[0]); });
 $("#downloadZoning").addEventListener("click", () => download().catch((error) => message(error.message))); $("#printZoning").addEventListener("click", zoningPrinter.print); $("#zoningFileList").addEventListener("click", (event) => { if (!event.target.matches("[data-remove-zoning-file]")) return; records = []; headers = []; fileName = ""; renderFile(); render(); });

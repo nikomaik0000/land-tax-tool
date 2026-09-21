@@ -74,6 +74,17 @@ select:focus { border-color: #555555; }
 .house-item summary { padding: 15px 18px; cursor: pointer; font-weight: 500; }
 .house-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 16px; padding: 4px 18px 18px; border-top: 1px solid var(--ui-border); }
 .house-fields .house-address-field { grid-column: 1 / -1; }
+.house-assessed-field > label { display: grid; gap: 8px; }
+.house-tax-reverse { display: grid; gap: 9px; margin-top: 12px; padding: 12px; border-top: 1px solid var(--ui-border); background: var(--ui-surface); }
+.house-tax-reverse > strong { color: #444444; font-size: 12px; font-weight: 600; }
+.house-tax-reverse-inputs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, 0.7fr); gap: 9px; }
+.house-tax-reverse-inputs label { display: grid; gap: 5px; color: var(--ui-text-secondary); font-size: 11px; }
+.house-tax-reverse-inputs input,
+.house-tax-reverse-inputs select { height: 36px; padding: 0 9px; font-size: 12px; }
+.house-tax-reverse-result { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; color: var(--ui-text-secondary); font-size: 11px; }
+.house-tax-reverse-result output { color: var(--ui-text); font-size: 13px; font-weight: 600; text-align: right; }
+.house-tax-reverse-result .btn { min-height: 32px; padding: 0 12px; font-size: 11px; }
+.house-tax-reverse small { color: var(--ui-text-secondary); font-size: 10px; line-height: 1.5; }
 .house-fields .house-actions { display: flex; grid-column: 1 / -1; align-items: center; justify-content: space-between; gap: 16px; }
 .house-owner-field { align-content: start; margin: 0; padding: 0; border: 0; }
 .house-owner-field legend { margin-bottom: 8px; padding: 0; }
@@ -261,4 +272,5 @@ select:focus { border-color: #555555; }
   .gift-tax-fields > .field { margin-right: 0; }
   .house-fields { grid-template-columns: 1fr; }
   .house-fields .house-address-field { grid-column: auto; }
+  .house-tax-reverse-inputs { grid-template-columns: 1fr; }
 }

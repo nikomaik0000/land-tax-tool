@@ -7,8 +7,8 @@
   <link rel="icon" href="./icon/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="css/style.css?v=20260902-2">
-  <link rel="stylesheet" href="css/print.css?v=20260903-4">
+  <link rel="stylesheet" href="css/style.css?v=20260921-3">
+  <link rel="stylesheet" href="css/print.css?v=20260921-2">
 </head>
 <body>
   <main class="app-container">
@@ -122,6 +122,8 @@
           <p>內容會隨案件資料、土地資料與試算表設定即時更新。</p>
         </div>
         <div class="preview-actions">
+          <button id="saveCase" class="btn btn-secondary" type="button">儲存案件</button>
+          <button id="importCase" class="btn btn-secondary" type="button">導入案件</button>
           <button id="clearPageState" class="btn btn-secondary" type="button">清除目前資料</button>
           <button id="downloadExcel" class="btn btn-primary" type="button">下載 Excel</button>
           <button id="printReport" class="btn btn-primary" type="button">列印 / 儲存 PDF</button>
@@ -137,6 +139,6 @@
   </main>
 
   <style id="dynamicPrintPage">@page { size: A4 landscape; margin: 8mm; }</style>
-  <script src="js/app.js?v=20260903-5" type="module"></script>
+  <script src="js/app.js?v=20260921-2" type="module"></script>
 </body>
 </html>

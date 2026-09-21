@@ -3,6 +3,7 @@ import { LAND_VALUE_DATA, LAND_VALUE_SOURCES, getLandValueSource } from "./land-
 import { buildLandValueDiagnosticKey, buildLandValueKey, compareLandValueRecord, normalizeCity, normalizeLandValueRecord, splitSectionAndSubsection } from "./land-value-normalization.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
 import { createReportPrinter, formatReportDate } from "./report-print.js";
+import { setupCaseFileActions } from "./case-file.js";
 
 const SHEETJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 const SOURCE_IDS = Object.keys(LAND_VALUE_SOURCES);
@@ -38,7 +39,7 @@ const elements = {
   queryFileList: document.querySelector("#queryFileList"), resultSummary: document.querySelector("#resultSummary"), resultEmpty: document.querySelector("#resultEmpty"),
   tableWrap: document.querySelector("#resultTableWrap"), headerRow: document.querySelector("#resultHeaderRow"), rows: document.querySelector("#resultRows"), actionMessage: document.querySelector("#actionMessage"),
   showOriginal: document.querySelector("#showOriginalValue"), showOfficialPrice: document.querySelector("#showOfficialPrice"),
-  clearPageState: document.querySelector("#clearLandValuePageState"), download: document.querySelector("#downloadResult"), print: document.querySelector("#printLandValueResult")
+  saveCase: document.querySelector("#saveLandValueCase"), importCase: document.querySelector("#importLandValueCase"), clearPageState: document.querySelector("#clearLandValuePageState"), download: document.querySelector("#downloadResult"), print: document.querySelector("#printLandValueResult")
 };
 
 let sheetJsPromise;
@@ -49,9 +50,29 @@ function savePageState() {
     queryFileName: state.queryFile?.name || state.queryFileName,
     workbookRows: state.workbookRows, headerRowIndex: state.headerRowIndex, headers: state.headers,
     columnMap: state.columnMap, records: state.records, fallbackCity: state.fallbackCity,
-    sheetName: state.sheetName, showOriginalValue: state.showOriginalValue, showOfficialPrice: state.showOfficialPrice,
+    sheetName: state.sheetName, error: state.error, showOriginalValue: state.showOriginalValue, showOfficialPrice: state.showOfficialPrice,
+    orientation: document.querySelector('input[name="landValuePrintOrientation"]:checked')?.value ?? "portrait",
     sourceMetadata: Object.fromEntries(SOURCE_IDS.map((id) => [id, { activeYear: state.sources[id].activeYear, manualYear: state.sources[id].manualYear, sourceMode: state.sources[id].sourceMode }]))
   });
+}
+
+export function serializeLandValueUpdateCase() {
+  return {
+    queryFileName: state.queryFile?.name || state.queryFileName, workbookRows: state.workbookRows, headerRowIndex: state.headerRowIndex,
+    headers: state.headers, columnMap: state.columnMap, records: state.records, fallbackCity: state.fallbackCity, sheetName: state.sheetName,
+    error: state.error, showOriginalValue: state.showOriginalValue, showOfficialPrice: state.showOfficialPrice,
+    orientation: document.querySelector('input[name="landValuePrintOrientation"]:checked')?.value ?? "portrait",
+    sourceMetadata: Object.fromEntries(SOURCE_IDS.map((id) => [id, { activeYear: state.sources[id].activeYear, manualYear: state.sources[id].manualYear, sourceMode: state.sources[id].sourceMode }]))
+  };
+}
+
+export function restoreLandValueUpdateCase(snapshot) {
+  Object.assign(state, structuredClone(snapshot), { queryFile: null });
+  for (const id of SOURCE_IDS) Object.assign(state.sources[id], snapshot.sourceMetadata?.[id] ?? {});
+  document.querySelectorAll('input[name="fallbackCity"]').forEach((input) => { input.checked = input.value === state.fallbackCity; });
+  elements.showOriginal.checked = state.showOriginalValue; elements.showOfficialPrice.checked = state.showOfficialPrice;
+  const orientation = document.querySelector(`input[name="landValuePrintOrientation"][value="${snapshot.orientation}"]`); if (orientation) orientation.checked = true;
+  renderQueryFile(); renderResults(); savePageState();
 }
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const canonical = (value) => String(value ?? "").replace(/[\s　\r\n_()（）／/・,，.。:：-]/g, "").toLowerCase();
@@ -459,8 +480,11 @@ elements.queryInput.addEventListener("change", (event) => { handleQueryFile(even
 document.querySelectorAll('input[name="fallbackCity"]').forEach((input) => { input.checked = input.value === state.fallbackCity; input.addEventListener("change", () => { state.fallbackCity = input.value; compareRecords(); }); });
 elements.showOriginal.checked = state.showOriginalValue;
 elements.showOfficialPrice.checked = state.showOfficialPrice;
+const restoredLandValueOrientation = document.querySelector(`input[name="landValuePrintOrientation"][value="${restoredState.orientation}"]`); if (restoredLandValueOrientation) restoredLandValueOrientation.checked = true;
+document.querySelectorAll('input[name="landValuePrintOrientation"]').forEach((input) => input.addEventListener("change", savePageState));
 elements.showOriginal.addEventListener("change", () => { state.showOriginalValue = elements.showOriginal.checked; renderResults(); });
 elements.showOfficialPrice.addEventListener("change", () => { state.showOfficialPrice = elements.showOfficialPrice.checked; renderResults(); });
+setupCaseFileActions({ pageType: "land-value-update", label: "公告現值更新", saveButton: elements.saveCase, importButton: elements.importCase, serialize: serializeLandValueUpdateCase, restore: restoreLandValueUpdateCase, hasData: () => state.records.length > 0, caseName: () => state.queryFileName.replace(/\.(?:xls|xlsx)$/i, "") });
 elements.queryFileList.addEventListener("click", (event) => { if (event.target.matches('[data-action="remove-query"]')) { state.queryFile = null; state.queryFileName = ""; state.records = []; state.workbookRows = []; renderQueryFile(); renderResults(); } });
 elements.clearPageState.addEventListener("click", () => {
   if (!window.confirm("確定清除公告現值更新頁目前資料？其他功能頁不受影響。")) return;

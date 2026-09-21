@@ -9,7 +9,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="css/style.css?v=20260820-2">
   <link rel="stylesheet" href="css/transcript.css?v=20260821-1">
-  <link rel="stylesheet" href="css/print.css?v=20260819-23">
+  <link rel="stylesheet" href="css/print.css?v=20260921-2">
 </head>
 <body>
   <main class="app-container">
@@ -39,6 +39,8 @@
       <div id="transcriptFileList" class="file-list" aria-live="polite"></div>
       <div class="actions">
         <button id="reparseTranscript" class="btn btn-secondary" type="button" disabled>重新解析 PDF</button>
+        <button id="saveTranscriptCase" class="btn btn-secondary" type="button">儲存案件</button>
+        <button id="importTranscriptCase" class="btn btn-secondary" type="button">導入案件</button>
       </div>
     </section>
 
@@ -127,6 +129,6 @@
     </section>
   </main>
   <style id="transcriptDynamicPrintPage">@page { size: A4 landscape; margin: 8mm; }</style>
-  <script src="js/transcript-app.js?v=20260903-2" type="module"></script>
+  <script src="js/transcript-app.js?v=20260921-1" type="module"></script>
 </body>
 </html>

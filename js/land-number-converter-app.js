@@ -4,6 +4,7 @@ import { applyLookup, createDistrictLookup, detectLandNumberHeaderRow, expandRes
 import { LAND_NUMBER_SOURCES, getLandNumberSourceByCity } from "./land-number-sources.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
 import { createReportPrinter, formatReportDate } from "./report-print.js";
+import { setupCaseFileActions } from "./case-file.js";
 
 const STORAGE_KEY = "landTool.landNumberConverterState";
 const SHEETJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
@@ -23,7 +24,7 @@ const elements = {
   dropZone: document.querySelector("#converterDropZone"), fileInput: document.querySelector("#converterFile"), fileList: document.querySelector("#converterFileList"),
   resultSummary: document.querySelector("#converterResultSummary"), resultEmpty: document.querySelector("#converterResultEmpty"),
   resultWrap: document.querySelector("#converterResultWrap"), resultHeader: document.querySelector("#converterResultHeader"), resultRows: document.querySelector("#converterResultRows"),
-  actionMessage: document.querySelector("#converterActionMessage"), clear: document.querySelector("#clearConverterState"), download: document.querySelector("#downloadConverterResult"), print: document.querySelector("#printConverterResult")
+  actionMessage: document.querySelector("#converterActionMessage"), saveCase: document.querySelector("#saveConverterCase"), importCase: document.querySelector("#importConverterCase"), clear: document.querySelector("#clearConverterState"), download: document.querySelector("#downloadConverterResult"), print: document.querySelector("#printConverterResult")
 };
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
@@ -49,8 +50,22 @@ function savePageState() {
     queryFileName: state.queryFile?.name || state.queryFileName, workbookRows: state.workbookRows,
     headerRowIndex: state.headerRowIndex, headers: state.headers, columnMap: state.columnMap,
     records: state.records, direction: state.direction, selectedCity: state.selectedCity, sheetName: state.sheetName,
-    loadedCity: state.selectedCity, loadedDistricts: state.loadedDistricts, uiOptions: {}
+    loadedCity: state.selectedCity, loadedDistricts: state.loadedDistricts, orientation: document.querySelector('input[name="converterPrintOrientation"]:checked')?.value ?? "landscape", uiOptions: {}
   });
+}
+
+export function serializeLandNumberCase() {
+  const { queryFile, manifests, ...snapshot } = state;
+  return { ...structuredClone(snapshot), queryFileName: queryFile?.name || state.queryFileName, orientation: document.querySelector('input[name="converterPrintOrientation"]:checked')?.value ?? "landscape" };
+}
+
+export function restoreLandNumberCase(snapshot) {
+  const keepManifests = state.manifests;
+  Object.assign(state, structuredClone(snapshot), { queryFile: null, manifests: keepManifests });
+  document.querySelectorAll('input[name="queryDirection"]').forEach((input) => { input.checked = input.value === state.direction; });
+  document.querySelectorAll('input[name="selectedCity"]').forEach((input) => { input.checked = input.value === state.selectedCity; });
+  const orientation = document.querySelector(`input[name="converterPrintOrientation"][value="${snapshot.orientation}"]`); if (orientation) orientation.checked = true;
+  renderFile(); renderResults(); savePageState();
 }
 
 function loadSheetJs() {
@@ -219,7 +234,10 @@ document.querySelectorAll('input[name="selectedCity"]').forEach((input) => {
   input.checked = input.value === state.selectedCity;
   input.addEventListener("change", () => { state.selectedCity = normalizeCity(input.value); savePageState(); });
 });
+const restoredConverterOrientation = document.querySelector(`input[name="converterPrintOrientation"][value="${restored.orientation}"]`); if (restoredConverterOrientation) restoredConverterOrientation.checked = true;
+document.querySelectorAll('input[name="converterPrintOrientation"]').forEach((input) => input.addEventListener("change", savePageState));
 setupDropZone(elements.dropZone, handleQueryFile);
+setupCaseFileActions({ pageType: "land-number-converter", label: "新舊地號查詢", saveButton: elements.saveCase, importButton: elements.importCase, serialize: serializeLandNumberCase, restore: restoreLandNumberCase, hasData: () => state.records.length > 0, caseName: () => state.queryFileName.replace(/\.(?:xls|xlsx)$/i, "") });
 elements.fileInput.addEventListener("change", (event) => { handleQueryFile(event.target.files[0]); event.target.value = ""; });
 elements.fileList.addEventListener("click", (event) => { if (event.target.matches('[data-action="remove-query"]')) { state.queryFile = null; state.queryFileName = ""; state.workbookRows = []; state.records = []; state.loadedDistricts = []; renderFile(); renderResults(); } });
 elements.clear.addEventListener("click", () => { if (!window.confirm("確定清除新舊地號查詢頁目前資料？其他功能頁不受影響。")) return; clearing = true; clearSessionState(STORAGE_KEY); location.reload(); });

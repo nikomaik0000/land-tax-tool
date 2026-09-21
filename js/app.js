@@ -16,6 +16,8 @@ import { fillMissingVatExcelCpi, readVatExcel } from "./vat-excel-import.js";
 import { loadCpiWorkbook } from "./cpi-lookup.js";
 import { loadDefaultCpiSource } from "./cpi-source.js";
 import { calculateLandValueIncrementTaxes } from "./land-value-increment-tax.js";
+import { setupCaseFileActions } from "./case-file.js";
+import { HOUSE_TAX_RATE_OPTIONS, estimateHouseValue } from "./house-tax-reverse.js";
 
 const $ = (selector) => document.querySelector(selector);
 const elements = {
@@ -26,7 +28,7 @@ const elements = {
   landRows: $("#landRows"), tableWrap: $("#tableWrap"), tableEmpty: $("#tableEmpty"),
   totalLandCurrentValue: $("#totalLandCurrentValue"), summaryHouseCurrentValue: $("#summaryHouseCurrentValue"),
   caseCurrentValue: $("#caseCurrentValue"), deedTax: $("#deedTax"),
-  reportSettings: $("#reportSettings"), downloadExcel: $("#downloadExcel"), printReport: $("#printReport"), clearPageState: $("#clearPageState"), a4Sheet: $("#a4Sheet"),
+  reportSettings: $("#reportSettings"), saveCase: $("#saveCase"), importCase: $("#importCase"), downloadExcel: $("#downloadExcel"), printReport: $("#printReport"), clearPageState: $("#clearPageState"), a4Sheet: $("#a4Sheet"),
   reportPreview: $("#reportPreview"), a4PreviewViewport: $("#a4PreviewViewport"),
   reportOverflowWarning: $("#reportOverflowWarning"), dynamicPrintPage: $("#dynamicPrintPage")
 };
@@ -45,6 +47,20 @@ function savePageState() {
   if (clearingPageState) return;
   const { files, ...snapshot } = state;
   saveSessionState(LAND_TAX_STORAGE_KEY, snapshot);
+}
+
+export function serializeLandTaxCase() {
+  const { files, ...snapshot } = state;
+  return structuredClone(snapshot);
+}
+
+export function restoreLandTaxCase(snapshot) {
+  const restored = structuredClone(snapshot);
+  Object.assign(state, restored, { files: [] });
+  elements.caseName.value = state.caseName ?? "";
+  restoredManualLandPrefix = [];
+  refresh();
+  savePageState();
 }
 
 function renderPreview() {
@@ -114,14 +130,20 @@ function renderOwners() {
 
 function renderHouses() {
   elements.houseCount.textContent = state.houses.length;
-  elements.houseList.innerHTML = state.houses.map((house, index) => `<details class="house-item" data-house-id="${house.id}"${index === 0 ? " open" : ""}>
+  elements.houseList.innerHTML = state.houses.map((house, index) => { house.estimatedHouseValue = estimateHouseValue(house.annualHouseTax, house.reverseTaxRate); return `<details class="house-item" data-house-id="${house.id}"${index === 0 ? " open" : ""}>
     <summary>${houseLabel(house, index)}</summary><div class="house-fields">
       <label class="field house-address-field"><span>房屋座落</span><input data-house-field="address" value="${String(house.address ?? "").replaceAll('"', '&quot;')}" placeholder="例如：台北市大同區延平北路…"></label>
-      <label class="field"><span>房屋評定現值</span><input data-house-field="assessedValue" data-format="money" inputmode="numeric" value="${formatMoney(house.assessedValue)}"></label>
+      <div class="field house-assessed-field"><label><span>房屋評定現值</span><input data-house-field="assessedValue" data-format="money" inputmode="numeric" value="${formatMoney(house.assessedValue)}"></label>
+        <div class="house-tax-reverse"><strong>由房屋稅額反推房屋現值</strong><div class="house-tax-reverse-inputs">
+          <label><span>年度房屋稅額</span><input data-house-reverse="annualHouseTax" data-format="money" inputmode="numeric" value="${house.annualHouseTax === "" ? "" : formatMoney(house.annualHouseTax)}"></label>
+          <label><span>適用稅率</span><select data-house-reverse="reverseTaxRate"><option value="">請選擇</option>${HOUSE_TAX_RATE_OPTIONS.map((option) => `<option value="${option.value}"${Number(house.reverseTaxRate) === option.value ? " selected" : ""}>${option.label}</option>`).join("")}</select></label>
+        </div><div class="house-tax-reverse-result"><span>推估房屋現值</span><output data-estimated-house-value>${house.estimatedHouseValue == null ? "—" : formatMoney(house.estimatedHouseValue)}</output><button class="btn btn-secondary" data-apply-estimated-house-value type="button"${house.estimatedHouseValue == null ? " disabled" : ""}>套用</button></div>
+        <small>估算值，實際以房屋稅單課稅現值為準</small></div>
+      </div>
       <div class="field"><span>房屋持分</span><div class="house-share-control"><input data-house-field="shareNumerator" inputmode="numeric" value="${house.shareNumerator}"><span>/</span><input data-house-field="shareDenominator" inputmode="numeric" value="${house.shareDenominator}"></div></div>
       <fieldset class="field house-owner-field"><legend>所有權人（每人持分相同）</legend><div class="house-owner-options">${state.owners.map((owner) => `<label class="check-option"><input data-house-owner-id="${owner.id}" type="checkbox"${house.ownerIds?.includes(owner.id) ? " checked" : ""}><span>${owner.name || "（未命名）"}</span></label>`).join("") || '<span class="relationship-warning">請先新增所有權人</span>'}</div></fieldset>
       <div class="house-actions"><p class="relationship-warning" data-house-warning></p><button class="text-button" data-remove-house="${house.id}" type="button">刪除房屋</button></div>
-    </div></details>`).join("");
+    </div></details>`; }).join("");
   renderRelationshipWarnings();
 }
 
@@ -432,6 +454,14 @@ elements.ownerList.addEventListener("click", (event) => {
 elements.addHouse.addEventListener("click", () => { const ownerId = state.owners[0]?.id ?? null; state.houses.push(createHouse({ ownerId, ownerIds: ownerId ? [ownerId] : [] })); refresh(); });
 elements.houseList.addEventListener("input", (event) => {
   const container = event.target.closest("[data-house-id]"); const house = state.houses.find((item) => item.id === container?.dataset.houseId); if (!house) return;
+  if (event.target.dataset.houseReverse) {
+    const field = event.target.dataset.houseReverse;
+    house[field] = field === "annualHouseTax" ? (event.target.value.trim() ? parseNumber(event.target.value) : "") : event.target.value;
+    house.estimatedHouseValue = estimateHouseValue(house.annualHouseTax, house.reverseTaxRate);
+    container.querySelector("[data-estimated-house-value]").textContent = house.estimatedHouseValue == null ? "—" : formatMoney(house.estimatedHouseValue);
+    container.querySelector("[data-apply-estimated-house-value]").disabled = house.estimatedHouseValue == null;
+    savePageState(); return;
+  }
   if (event.target.dataset.houseOwnerId) {
     house.ownerIds = [...container.querySelectorAll("[data-house-owner-id]:checked")].map((input) => input.dataset.houseOwnerId);
     house.ownerId = house.ownerIds[0] ?? null; recalculateSummary(); renderRelationshipWarnings(); return;
@@ -442,6 +472,13 @@ elements.houseList.addEventListener("input", (event) => {
 });
 elements.houseList.addEventListener("focusout", (event) => { if (event.target.dataset.format === "money") event.target.value = formatMoney(parseNumber(event.target.value)); });
 elements.houseList.addEventListener("click", (event) => {
+  const container = event.target.closest("[data-house-id]"); const house = state.houses.find((item) => item.id === container?.dataset.houseId);
+  if (event.target.matches("[data-apply-estimated-house-value]") && house?.estimatedHouseValue != null) {
+    const input = container.querySelector('[data-house-field="assessedValue"]');
+    input.value = formatMoney(house.estimatedHouseValue);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
   const id = event.target.dataset.removeHouse; if (!id) return;
   const affected = state.lands.some((land) => land.houseId === id);
   state.houses = state.houses.filter((house) => house.id !== id);
@@ -460,6 +497,12 @@ settingsController = createReportSettings({
     if (changed && state.displayOptions.showLandZoning) lookupLandZoning();
   },
   onRequeryZoning: () => lookupLandZoning()
+});
+
+setupCaseFileActions({
+  pageType: "land-tax", label: "土地增值稅試算", saveButton: elements.saveCase, importButton: elements.importCase,
+  serialize: serializeLandTaxCase, restore: restoreLandTaxCase, hasData: () => state.lands.length > 0 || state.owners.length > 0 || state.houses.length > 0,
+  caseName: () => state.caseName
 });
 
 elements.clearPageState.addEventListener("click", () => {

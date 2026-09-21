@@ -8,7 +8,8 @@ export function createOwner(name = "") {
 export function createHouse(overrides = {}) {
   return {
     id: makeId("house"), address: "", assessedValue: 0, shareNumerator: 1,
-    shareDenominator: 1, ownerId: null, ownerIds: [], currentValue: 0, deedTax: 0, ...overrides
+    shareDenominator: 1, ownerId: null, ownerIds: [], currentValue: 0, deedTax: 0,
+    annualHouseTax: "", reverseTaxRate: "", estimatedHouseValue: null, ...overrides
   };
 }
 
