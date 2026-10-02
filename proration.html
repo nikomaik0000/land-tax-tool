@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>地價稅房屋稅 分算找補</title>
+  <link rel="icon" href="./icon/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="./icon/apple-touch-icon.png"><link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="css/style.css?v=20261002-1"><link rel="stylesheet" href="css/print.css?v=20261002-1">
+</head>
+<body><main class="app-container">
+  <header class="site-header"><p class="eyebrow">LAND TAX TOOL</p><h1>地價稅房屋稅 分算找補</h1>
+    <nav class="tool-nav" aria-label="功能切換"><a href="index.html">增值稅試算</a><a class="is-active" href="proration.html" aria-current="page">分算找補</a><a href="transcript.html">謄本整理</a><a href="land-value-update.html">公告現值更新</a><a href="land-number-converter.html">新舊地號查詢</a><a href="zoning.html">使用分區查詢</a></nav>
+  </header>
+
+  <section class="section"><div class="section-heading"><h2>案件基本資料</h2><p>交屋日／分算基準日作為案件資訊；各稅別請另行指定本次找補期間。</p></div>
+    <div class="form-grid"><label class="field"><span>案件名稱</span><input data-shared-field="caseName" type="text" placeholder="例如：王○○－房地稅費分算"></label><label class="field"><span>交屋日／分算基準日</span><input data-shared-field="handoverDate" type="date"></label><label class="field"><span>買方</span><input data-customer-field="buyer" type="text" placeholder="例如：王○○"></label><label class="field"><span>賣方</span><input data-shared-field="seller" type="text" placeholder="例如：陳○○"></label></div>
+  </section>
+
+  <section class="section" data-tax-section="houseTax"><div class="section-heading"><h2>房屋稅資料</h2><p>依稅單房屋稅額、本次找補天數及總課稅天數進行分算。</p></div><div class="form-grid proration-tax-grid">
+    <label class="field"><span>房屋稅額</span><input data-tax-field="amount" data-money-field inputmode="numeric" type="text"></label><label class="field"><span>課稅月數</span><input data-tax-field="taxableMonths" inputmode="numeric" type="number" min="1" step="1"></label><label class="field"><span>完整課稅開始日</span><input data-tax-field="taxStartDate" type="date"></label>
+    <label class="field"><span>本次找補開始日</span><input data-tax-field="prorationStartDate" type="date"></label><label class="field"><span>本次找補結束日</span><input data-tax-field="prorationEndDate" type="date"></label><label class="field"><span>稅款由誰支付</span><select data-tax-field="payer" class="form-select"><option value="seller">賣方</option><option value="buyer">買方</option></select></label>
+    <label class="field field-full"><span>房屋稅課稅說明（選填）</span><textarea data-tax-field="taxNote" rows="3" placeholder="例如：114 年尚有 1 個月未課稅，併入 115 年課徵。"></textarea></label>
+  </div><p class="validation-message proration-message" data-result="error" hidden></p></section>
+
+  <section class="section" data-tax-section="landTax"><div class="section-heading"><h2>地價稅資料</h2><p>依申報地價、面積、土地持分與稅率計算完整地價稅，再依本次找補天數分算。</p></div><div class="form-grid proration-tax-grid">
+    <label class="field"><span>申報地價（元／㎡）</span><input data-tax-field="declaredLandValue" data-money-field inputmode="numeric" type="text"></label><label class="field"><span>土地面積（㎡）</span><input data-tax-field="area" inputmode="decimal" type="number" min="0" step="0.01"></label><div class="field"><span>土地持分</span><div class="house-share-control"><input data-tax-field="shareNumerator" inputmode="decimal" type="number" min="0" step="0.01" aria-label="土地持分分子"><span>/</span><input data-tax-field="shareDenominator" inputmode="decimal" type="number" min="0" step="0.01" aria-label="土地持分分母"></div></div>
+    <label class="field"><span>地價稅率（%）</span><input data-tax-field="rate" inputmode="decimal" type="number" min="0" step="0.01"></label><label class="field"><span>課稅年度</span><input data-tax-field="taxYear" inputmode="numeric" type="number" min="1912" step="1" placeholder="例如：2026"></label><label class="field"><span>稅款由誰支付</span><select data-tax-field="payer" class="form-select"><option value="seller">賣方</option><option value="buyer">買方</option></select></label>
+    <label class="field"><span>本次找補開始日</span><input data-tax-field="prorationStartDate" type="date"></label><label class="field"><span>本次找補結束日</span><input data-tax-field="prorationEndDate" type="date"></label>
+  </div><div class="calculation-summary proration-basis-summary"><div><span>申報地價 × 面積 × 土地持分</span><strong data-result="taxableLandValue">—</strong><small>課稅地價</small></div><div class="summary-total"><span>課稅地價 × 稅率</span><strong data-result="taxAmount">—</strong><small>地價稅</small></div></div><p class="validation-message proration-message" data-result="error" hidden></p></section>
+
+  <section class="section"><div class="actions"><button id="calculateProration" class="btn btn-primary" type="button">開始試算</button></div><p id="calculationError" class="report-warning" hidden aria-live="polite"></p></section>
+
+  <section id="calculationResults" class="section"><div class="section-heading"><h2>分算結果／最終找補</h2><p>結果會隨輸入即時更新；按下「開始試算」可檢查必要欄位並移動到本區。</p></div>
+    <div class="proration-result-list"><article class="custom-note-item" data-result-card="house"><div class="repeatable-heading"><strong>房屋稅分算</strong><span data-result="taxAmount">—</span></div><div class="proration-result-details" data-result="details"></div><p class="gift-tax-result"><span>找補結果</span><strong data-result="settlement">—</strong></p></article>
+    <article class="custom-note-item" data-result-card="land"><div class="repeatable-heading"><strong>地價稅分算</strong><span data-result="taxAmount">—</span></div><div class="proration-result-details" data-result="details"></div><p class="gift-tax-result"><span>找補結果</span><strong data-result="settlement">—</strong></p></article></div>
+    <div class="calculation-summary proration-final-summary"><div><span>房屋稅</span><strong data-final="house">—</strong></div><div><span>地價稅</span><strong data-final="land">—</strong></div><div class="summary-total"><span>最終找補</span><strong data-final="total">—</strong></div></div>
+  </section>
+
+  <section class="section"><div class="section-heading section-heading-inline"><div><h2>其他備註</h2><p>可新增多筆案件備註；編號會依目前順序自動排列。</p></div><button id="addNote" class="btn btn-secondary" type="button">＋ 新增其他備註</button></div><div id="notesList" class="custom-notes-list"></div></section>
+
+  <section class="section preview-section"><div class="section-heading section-heading-inline preview-heading"><div><h2>試算表預覽</h2><p>內容會隨案件資料與分算設定即時更新。</p></div><div class="preview-actions"><button id="saveCase" class="btn btn-secondary" type="button">儲存案件</button><button id="importCase" class="btn btn-secondary" type="button">導入案件</button><button id="clearPageState" class="btn btn-secondary" type="button">清除目前資料</button><button id="downloadExcel" class="btn btn-primary" type="button">下載 Excel</button><button id="printReport" class="btn btn-primary" type="button">列印 / 儲存 PDF</button></div></div>
+    <div id="reportPreview" class="report-preview"><div id="a4PreviewViewport" class="a4-preview-viewport"><article id="a4Sheet" class="a4-sheet proration-a4-sheet orientation-portrait report-font-medium table-spacing-standard section-spacing-standard" aria-label="地價稅房屋稅分算找補預覽"></article></div></div>
+  </section>
+</main><style>@page { size: A4 portrait; margin: 10mm 8mm 8mm; }</style><script src="js/proration-app.js?v=20261002-1" type="module"></script></body></html>

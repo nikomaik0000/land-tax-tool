@@ -1,0 +1,68 @@
+import assert from "node:assert/strict";
+import { buildCaseFile, parseCaseFile } from "./case-file.js";
+import { calculateCombinedSettlement, calculateHouseTax, calculateLandTax, calculateProration, settlementText } from "./proration-calculations.js";
+import { formatRocDate, renderProrationReport } from "./proration-report.js";
+import { normalizeProrationState } from "./proration-state.js";
+
+assert.deepEqual(normalizeProrationState(null), normalizeProrationState({}));
+const houseTax = { amount: 46845, taxableMonths: 13, taxStartDate: "2025-06-01", prorationStartDate: "2026-07-01", prorationEndDate: "2026-10-01", payer: "buyer", taxNote: "114 年尚有 1 個月未課稅，併入 115 年課徵。" };
+const landTax = { declaredLandValue: 5760, area: 9795.24, shareNumerator: 873, shareDenominator: 100000, rate: 1, taxYear: 2026, prorationStartDate: "2026-01-01", prorationEndDate: "2026-10-01", payer: "buyer" };
+const house = calculateHouseTax(houseTax); const land = calculateLandTax(landTax);
+const oppositeLand = calculateLandTax({ ...landTax, payer: "seller" });
+assert.deepEqual({ days: house.prorationDays, amount: house.prorationAmount, settlement: house.settlement }, { days: 93, amount: 11029, settlement: -11029 });
+assert.deepEqual({ start: house.taxStartDate, end: house.taxEndDate, total: house.totalTaxDays }, { start: "2025-06-01", end: "2026-06-30", total: 395 });
+assert.deepEqual({ taxable: land.taxableLandValue, tax: land.taxAmount, days: land.prorationDays, amount: land.prorationAmount, settlement: land.settlement }, { taxable: 492552, tax: 4926, days: 274, amount: 3698, settlement: -3698 });
+assert.equal(calculateCombinedSettlement(house, land), -14727, "A3 Golden Case");
+assert.equal(settlementText(-14727, "鄭啟明", "立源"), "立源應補鄭啟明 $14,727");
+assert.deepEqual(calculateHouseTax({ ...houseTax, handoverDate: "2026-09-30" }), house, "交屋日不得改變總天數或找補期間");
+
+const sellerPaid = calculateHouseTax({ ...houseTax, payer: "seller" });
+assert.equal(sellerPaid.settlement, 11029);
+assert.equal(calculateCombinedSettlement(sellerPaid, { ...land, settlement: 3698 }), 14727, "同方向相加");
+assert.equal(calculateCombinedSettlement(sellerPaid, land), 7331, "相反方向抵銷");
+assert.equal(calculateCombinedSettlement(house, oppositeLand), -7331, "A3 相反支付方向抵銷");
+assert.equal(settlementText(-7331, "鄭啟明", "立源"), "立源應補鄭啟明 $7,331");
+assert.equal(calculateCombinedSettlement({ valid: true, settlement: 3698 }, { valid: true, settlement: -3698 }), 0);
+assert.equal(settlementText(0), "雙方無須找補");
+
+const leap = calculateProration({ amount: 36600, totalTaxDays: 366, prorationStartDate: "2024-01-01", prorationEndDate: "2024-12-31", payer: "seller" });
+assert.deepEqual({ days: leap.prorationDays, amount: leap.prorationAmount }, { days: 366, amount: 36600 });
+assert.match(calculateProration({ amount: 100, totalTaxDays: 10, prorationStartDate: "2026-01-10", prorationEndDate: "2026-01-01" }).error, /不可晚於/);
+assert.match(calculateProration({ amount: 100, totalTaxDays: 5, prorationStartDate: "2026-01-01", prorationEndDate: "2026-01-10" }).error, /不可大於/);
+assert.match(calculateProration({ amount: 100, totalTaxDays: 0, prorationStartDate: "2026-01-01", prorationEndDate: "2026-01-01" }).error, /必須大於 0/);
+assert.equal(calculateLandTax({ ...landTax, taxYear: 2024 }).totalTaxDays, 366);
+assert.equal(calculateLandTax({ ...landTax, shareDenominator: 0 }).fieldErrors.shareDenominator, "土地持分分母必須大於 0。");
+assert.equal(calculateLandTax({ ...landTax, shareNumerator: 100001 }).fieldErrors.shareNumerator, "土地持分分子不可大於分母。");
+
+const caseTitle = "立源富立方（6樓-A3 鄭啟明）房屋稅、地價稅買賣雙方分算明細";
+const state = normalizeProrationState({ schemaVersion: 5, shared: { caseName: caseTitle, seller: "立源", handoverDate: "2026-10-01", notes: [{ id: "n1", content: "一般備註一" }, { id: "n2", content: "一般備註二" }] }, customer: { id: "single", buyer: "鄭啟明", houseTax, landTax } });
+const restored = parseCaseFile(JSON.stringify(buildCaseFile("tax-proration", state)), "tax-proration").data;
+assert.deepEqual(normalizeProrationState(restored), state);
+assert.equal(restored.customer.houseTax.taxNote, houseTax.taxNote);
+assert.equal(restored.shared.notes.length, 2);
+const html = renderProrationReport(state, { house, land: oppositeLand, total: -7331 });
+assert.equal(formatRocDate("2026-07-01"), "115/7/1");
+assert.equal(formatRocDate("2026/10/01"), "115/10/1");
+assert.equal(formatRocDate("115/10/1"), "115/10/1");
+assert.equal(formatRocDate("0115/10/01"), "115/10/1");
+assert.equal(formatRocDate("2025-06-30"), "114/6/30");
+assert.ok(html.includes(`<h2>${caseTitle}</h2>`));
+assert.doesNotMatch(html, /案件名稱：|課稅年度|總課稅天數/);
+assert.match(html, /交屋日／分算基準日：115\/10\/1/);
+assert.match(html, /114\/6\/1～115\/6\/30/);
+assert.match(html, /proration-final-label">抵銷後　立源應補鄭啟明<\/td>[\s\S]*proration-final-amount">7,331/);
+assert.match(html, /房屋稅（立源應補鄭啟明）[\s\S]*11,029/);
+assert.match(html, /地價稅（鄭啟明應補立源）[\s\S]*3,698/);
+assert.match(html, /9,795\.24 ㎡/);
+assert.match(html, /93 \/ 395/); assert.match(html, /274 \/ 365/);
+assert.doesNotMatch(html, /rowspan=|proration-final-direction|proration-final-breakdown/);
+assert.doesNotMatch(html, /\$\s*(?:11,029|3,698|7,331)/);
+assert.match(html, /<strong>備註：<\/strong>114 年尚有 1 個月未課稅/);
+assert.match(html, /46,845 × 93 \/ 395/); assert.match(html, /4,926 × 274 \/ 365/);
+assert.match(html, /report-notes-section report-section proration-section"><h3 class="proration-section-title">其他備註<\/h3>/); assert.match(html, /一般備註一/); assert.doesNotMatch(html, /房屋現值|公式估算|找補結果/);
+const noNotesHtml = renderProrationReport({ ...state, shared: { ...state.shared, notes: [] }, customer: { ...state.customer, houseTax: { ...state.customer.houseTax, taxNote: "" } } }, { house, land: oppositeLand, total: -7331 });
+assert.doesNotMatch(noNotesHtml, /proration-tax-note|>其他備註<\/h3>/);
+
+const migrated = normalizeProrationState({ schemaVersion: 4, shared: { seller: "舊賣方", handoverDate: "2026-05-03", notes: [] }, customer: { buyer: "舊買方", houseTax: { amount: 46845, taxableMonths: 13, taxStartDate: "2025-06-01", totalDays: 93, prorationStartDate: "2026-07-01", prorationEndDate: "2026-10-01", payer: "buyer" }, landTax: { ...landTax, totalDays: 274 } } });
+assert.equal(migrated.schemaVersion, 5); assert.equal(calculateHouseTax(migrated.customer.houseTax).totalTaxDays, 395); assert.equal(calculateLandTax(migrated.customer.landTax).totalTaxDays, 365);
+console.log("proration A3 Golden Case, explicit periods, migration, notes, and report tests passed");

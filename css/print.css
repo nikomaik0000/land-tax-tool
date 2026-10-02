@@ -153,6 +153,29 @@
 .report-document.density-compact .a4-land-table .report-zoning-row td,
 .report-document.density-dense .a4-land-table .report-zoning-row td { padding-left: 8px; }
 .report-document.density-dense .report-clause { line-height: var(--clause-line-height); }
+.proration-report-table td:nth-child(2) { text-align: center; white-space: normal; }
+.proration-report-table td:nth-child(3) { text-align: center; }
+.proration-final strong { font-size: var(--report-tax-size); }
+.proration-basis-table { margin-bottom: calc(var(--section-gap) * 0.45); }
+.proration-basis-table th { width: 13%; }
+.proration-basis-table td { width: 20%; }
+.proration-basis-table small { color: var(--print-dark); font-size: 0.85em; }
+.proration-section { margin-top: calc(var(--section-gap) * 1.75); }
+.proration-report-heading { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: calc(var(--section-gap) * 0.45); }
+.report-section .proration-section-title { margin-bottom: calc(var(--section-gap) * 0.45); padding-bottom: 0; border-bottom: 0; font-size: 12px; letter-spacing: 0.075em; }
+.proration-report-heading .proration-section-title { margin-bottom: 0; }
+.proration-report-heading span { color: var(--print-dark); font-size: var(--report-note-size); }
+.proration-report-table { margin-top: 0; }
+.proration-report-table th,
+.proration-report-table td { text-align: center; }
+.proration-report-table tfoot th { text-align: left; }
+.proration-report-table tfoot td { text-align: right; font-weight: 600; }
+.proration-tax-note { margin-top: calc(var(--section-gap) * 0.35); }
+.proration-final-table .proration-final-label { width: auto; padding-left: 30px; text-align: left; letter-spacing: 0.075em; }
+.proration-final-table .proration-final-detail-amount,
+.proration-final-table .proration-final-amount { width: 24%; padding-right: 30px; text-align: right; letter-spacing: normal; }
+.proration-final-table .proration-final-total td { border-top: 2px solid var(--print-black); }
+.proration-final-table .proration-final-amount { font-size: var(--report-tax-size); font-weight: 600; }
 
 @media print {
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

@@ -19,7 +19,7 @@ export function createDefaultReportConfiguration() {
       printLandColumns: { district: true, section: true, subsection: true, owner: true },
       showSelfUseTax: true,
       showTaxSummary: true,
-      taxSummaryItems: { selfUseTax: true, generalTax: true, deedTax: true, giftTax: false }
+      taxSummaryItems: { selfUseTax: true, generalTax: true, deedTax: false, giftTax: false }
     },
     selectedClauses: ["selfUse", "houseLandTax", "post2016"],
     customNotes: [],
@@ -110,15 +110,13 @@ export function createReportSettings({ container, state, onChange = () => {}, on
   const sync = () => {
     header.setAttribute("aria-expanded", String(state.settingsExpanded));
     content.hidden = !state.settingsExpanded;
+    for (const input of container.querySelectorAll("[data-toggle]")) {
+      input.checked = input.dataset.toggle === "giftTax" ? Boolean(state.giftTax.enabled) : Boolean(state.displayOptions[input.dataset.toggle]);
+    }
+    for (const input of container.querySelectorAll("[data-summary-item]")) input.checked = Boolean(state.displayOptions.taxSummaryItems[input.value]);
     container.querySelector("[data-gift-fields]").hidden = !state.giftTax.enabled;
     container.querySelector("[data-summary-options]").hidden = !state.displayOptions.showTaxSummary;
     container.querySelector("[data-zoning-options]").hidden = !state.displayOptions.showLandZoning;
-    const selfSummary = container.querySelector('[data-summary-item][value="selfUseTax"]');
-    selfSummary.disabled = !state.displayOptions.showSelfUseTax;
-    if (!state.displayOptions.showSelfUseTax) selfSummary.checked = false;
-    const giftSummary = container.querySelector('[data-summary-item][value="giftTax"]');
-    giftSummary.disabled = !state.giftTax.enabled;
-    if (!state.giftTax.enabled) giftSummary.checked = false;
     container.querySelector("[data-gift-result]").textContent = formatMoney(state.giftTax.result?.finalGiftTax ?? 0);
     for (const input of container.querySelectorAll("[data-gift-money]")) if (document.activeElement !== input) input.value = formatMoney(state.giftTax[input.dataset.giftMoney]);
   };
@@ -130,16 +128,14 @@ export function createReportSettings({ container, state, onChange = () => {}, on
     if (input.dataset.option && input.checked) state.displayOptions[input.dataset.option] = input.value;
     if (input.dataset.toggle === "showSelfUseTax") {
       state.displayOptions.showSelfUseTax = input.checked;
-      if (!input.checked) state.displayOptions.taxSummaryItems.selfUseTax = false;
     }
     if (input.dataset.toggle === "showTaxSummary") state.displayOptions.showTaxSummary = input.checked;
     if (input.dataset.toggle === "showLandZoning") state.displayOptions.showLandZoning = input.checked;
     if (input.dataset.toggle === "showCaseTotal") state.displayOptions.showCaseTotal = input.checked;
     if (input.dataset.toggle === "giftTax") {
       state.giftTax.enabled = input.checked;
-      if (!input.checked) state.displayOptions.taxSummaryItems.giftTax = false;
     }
-    if (input.dataset.summaryItem) state.displayOptions.taxSummaryItems[input.value] = input.checked;
+    if (input.dataset.summaryItem !== undefined) state.displayOptions.taxSummaryItems[input.value] = input.checked;
     if (input.dataset.printLandColumn) state.displayOptions.printLandColumns[input.dataset.printLandColumn] = input.checked;
     if (input.dataset.clause !== undefined) state.selectedClauses = [...container.querySelectorAll("[data-clause]:checked")].map((item) => item.value);
     if (input.dataset.customNoteEnabled !== undefined) {

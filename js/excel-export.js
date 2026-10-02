@@ -2,6 +2,7 @@ import { clauses } from "./clauses.js?v=20260818-9";
 import { formatLandNumber } from "./formatters.js?v=20260819-25";
 import { calculateTaxSummaryByOwner, calculateTotalDeedTax } from "./calculations.js";
 import { hasEffectiveHouseData, ownerName } from "./relationships.js";
+import { getVisibleTaxSummaryItems } from "./tax-summary-display.js";
 import { normalizeDistrict } from "./land-value-normalization.js";
 import { getFinalTransferTaxes } from "./land-zoning.js";
 
@@ -123,7 +124,7 @@ function writeMainTable(sheet, startRow, state, totals, styles) {
     sheet.mergeCells(row, 1, row, announcedColumn); sheet.getCell(row, 1).value = `房屋座落：${house.address || "—"}`;
     sheet.getCell(row, 1).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
     sheet.getCell(row, shareColumn).value = shareText(house.shareNumerator, house.shareDenominator);
-    sheet.getCell(row, currentColumn).value = numericOrNull(house.currentValue); sheet.getCell(row, currentColumn).numFmt = MONEY_FORMAT;
+    sheet.getCell(row, currentColumn).value = hasEffectiveHouseData([house]) ? numericOrNull(house.currentValue) : null; sheet.getCell(row, currentColumn).numFmt = MONEY_FORMAT;
     sheet.getRow(row).height = styles.spacing.data; styleRange(sheet, row, 1, row, columns.length, { fontSize: styles.font.body }); row += 1;
   };
   for (let landIndex = 0; landIndex < state.lands.length; landIndex += 1) {
@@ -240,14 +241,7 @@ function writeGiftTax(sheet, startRow, state, totalColumns, styles) {
 }
 
 function taxSummaryItems(state, totals) {
-  if (!state.displayOptions.showTaxSummary) return [];
-  const selected = state.displayOptions.taxSummaryItems;
-  return [
-    ...(state.displayOptions.showSelfUseTax && selected.selfUseTax ? [{ label: "自用增值稅", value: totals.selfUseTax }] : []),
-    ...(selected.generalTax ? [{ label: "一般增值稅", value: totals.generalTax }] : []),
-    ...(selected.deedTax && hasEffectiveHouseData(state) ? [{ label: "契稅", value: calculateTotalDeedTax(state.houses) }] : []),
-    ...(state.giftTax.enabled && selected.giftTax && state.giftTax.result ? [{ label: "贈與稅", value: state.giftTax.result.finalGiftTax }] : [])
-  ];
+  return getVisibleTaxSummaryItems(state, totals, state.giftTax?.result, calculateTotalDeedTax);
 }
 
 function writeTaxSummary(sheet, startRow, state, totals, totalColumns, styles) {
@@ -260,7 +254,7 @@ function writeTaxSummary(sheet, startRow, state, totals, totalColumns, styles) {
     summaryItems.forEach((item, index) => {
       const from = Math.floor(index * totalColumns / summaryItems.length) + 1; const to = Math.floor((index + 1) * totalColumns / summaryItems.length);
       if (to > from) { sheet.mergeCells(labelRow, from, labelRow, to); sheet.mergeCells(valueRow, from, valueRow, to); }
-      sheet.getCell(labelRow, from).value = item.label; sheet.getCell(valueRow, from).value = numericOrNull(item.value); sheet.getCell(valueRow, from).numFmt = MONEY_FORMAT;
+      sheet.getCell(labelRow, from).value = item.label; sheet.getCell(valueRow, from).value = item.hasRequiredData ? numericOrNull(item.value) : null; sheet.getCell(valueRow, from).numFmt = MONEY_FORMAT;
       sheet.getCell(valueRow, from).alignment = { horizontal: "right", vertical: "middle" };
     });
     sheet.getRow(labelRow).height = styles.spacing.data; sheet.getRow(valueRow).height = styles.spacing.data;
@@ -269,13 +263,13 @@ function writeTaxSummary(sheet, startRow, state, totals, totalColumns, styles) {
   const groups = calculateTaxSummaryByOwner(state);
   if (groups.length <= 1) { writeItems(items); return row; }
   const selected = state.displayOptions.taxSummaryItems;
-  const columns = [...(state.displayOptions.showSelfUseTax && selected.selfUseTax ? [{ key: "selfUseTax", label: "自用增值稅", total: totals.selfUseTax }] : []), ...(selected.generalTax ? [{ key: "generalTax", label: "一般增值稅", total: totals.generalTax }] : []), ...(selected.deedTax && hasEffectiveHouseData(state) ? [{ key: "deedTax", label: "契稅", total: calculateTotalDeedTax(state.houses) }] : [])];
+  const columns = items.filter((item) => item.key !== "giftTax").map((item) => ({ ...item, total: item.value }));
   if (columns.length) {
     const logicalColumns = columns.length + 1; const headerRow = row; const spans = [];
     for (let index = 0; index < logicalColumns; index += 1) { const from = Math.floor(index * totalColumns / logicalColumns) + 1; const to = Math.floor((index + 1) * totalColumns / logicalColumns); spans.push({ from, to }); if (to > from) sheet.mergeCells(row, from, row, to); }
     sheet.getCell(row, spans[0].from).value = "所有權人"; columns.forEach((column, index) => { sheet.getCell(row, spans[index + 1].from).value = column.label; }); row += 1;
-    for (const group of groups) { spans.forEach(({ from, to }) => { if (to > from) sheet.mergeCells(row, from, row, to); }); sheet.getCell(row, spans[0].from).value = group.ownerName || "未命名所有權人"; columns.forEach((column, index) => { const cell = sheet.getCell(row, spans[index + 1].from); cell.value = group[column.key]; cell.numFmt = MONEY_FORMAT; cell.alignment = { horizontal: "right", vertical: "middle" }; }); row += 1; }
-    if (state.displayOptions.showCaseTotal) { spans.forEach(({ from, to }) => { if (to > from) sheet.mergeCells(row, from, row, to); }); sheet.getCell(row, spans[0].from).value = "合計"; columns.forEach((column, index) => { const cell = sheet.getCell(row, spans[index + 1].from); cell.value = column.total; cell.numFmt = MONEY_FORMAT; cell.alignment = { horizontal: "right", vertical: "middle" }; }); row += 1; }
+    for (const group of groups) { spans.forEach(({ from, to }) => { if (to > from) sheet.mergeCells(row, from, row, to); }); sheet.getCell(row, spans[0].from).value = group.ownerName || "未命名所有權人"; columns.forEach((column, index) => { const cell = sheet.getCell(row, spans[index + 1].from); cell.value = column.hasRequiredData ? group[column.key] : null; cell.numFmt = MONEY_FORMAT; cell.alignment = { horizontal: "right", vertical: "middle" }; }); row += 1; }
+    if (state.displayOptions.showCaseTotal) { spans.forEach(({ from, to }) => { if (to > from) sheet.mergeCells(row, from, row, to); }); sheet.getCell(row, spans[0].from).value = "合計"; columns.forEach((column, index) => { const cell = sheet.getCell(row, spans[index + 1].from); cell.value = column.hasRequiredData ? column.total : null; cell.numFmt = MONEY_FORMAT; cell.alignment = { horizontal: "right", vertical: "middle" }; }); row += 1; }
     for (let current = headerRow; current < row; current += 1) sheet.getRow(current).height = styles.spacing.data;
     styleRange(sheet, headerRow, 1, row - 1, totalColumns, { fontSize: styles.font.body }); for (let col = 1; col <= totalColumns; col += 1) applyFont(sheet.getCell(headerRow, col), styles.font.body, true);
   }

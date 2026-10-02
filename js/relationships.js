@@ -7,7 +7,7 @@ export function createOwner(name = "") {
 
 export function createHouse(overrides = {}) {
   return {
-    id: makeId("house"), address: "", assessedValue: 0, shareNumerator: 1,
+    id: makeId("house"), address: "", assessedValue: null, shareNumerator: 1,
     shareDenominator: 1, ownerId: null, ownerIds: [], currentValue: 0, deedTax: 0,
     annualHouseTax: "", reverseTaxRate: "", estimatedHouseValue: null, ...overrides
   };
@@ -61,7 +61,15 @@ export function relatedHouses(state) {
 
 export function hasEffectiveHouseData(stateOrHouses) {
   const houses = Array.isArray(stateOrHouses) ? stateOrHouses : stateOrHouses?.houses;
-  return (houses ?? []).some((house) => cleanName(house?.address) || Number(house?.assessedValue) > 0);
+  return (houses ?? []).some((house) => {
+    const rawValue = house?.assessedValue;
+    const assessedValue = Number(rawValue);
+    const numerator = Number(house?.shareNumerator);
+    const denominator = Number(house?.shareDenominator);
+    return rawValue !== "" && rawValue !== null && rawValue !== undefined
+      && Number.isFinite(assessedValue) && assessedValue >= 0
+      && Number.isFinite(numerator) && Number.isFinite(denominator) && denominator !== 0;
+  });
 }
 
 export function houseLabel(house, index) {

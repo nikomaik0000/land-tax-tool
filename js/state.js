@@ -5,12 +5,12 @@ import { migrateRelationshipState } from "./relationships.js";
 const reportConfiguration = createDefaultReportConfiguration();
 export const LAND_TAX_STORAGE_KEY = "landTool.landTaxState";
 const restored = loadSessionState(LAND_TAX_STORAGE_KEY) ?? {};
-const defaultHouse = { address: "", assessedValue: 0, shareNumerator: 1, shareDenominator: 1, currentValue: 0, deedTax: 0, annualHouseTax: "", reverseTaxRate: "", estimatedHouseValue: null };
+const defaultHouse = { address: "", assessedValue: null, shareNumerator: 1, shareDenominator: 1, currentValue: 0, deedTax: 0, annualHouseTax: "", reverseTaxRate: "", estimatedHouseValue: null };
 
 export const state = {
   caseName: "土地增值稅試算",
   owner: "",
-  owners: [], houses: [], house: { address: "", assessedValue: 0, shareNumerator: 1, shareDenominator: 1, currentValue: 0, deedTax: 0, annualHouseTax: "", reverseTaxRate: "", estimatedHouseValue: null },
+  owners: [], houses: [], house: { address: "", assessedValue: null, shareNumerator: 1, shareDenominator: 1, currentValue: 0, deedTax: 0, annualHouseTax: "", reverseTaxRate: "", estimatedHouseValue: null },
   files: [],
   documentOrderMode: "auto",
   lands: [],

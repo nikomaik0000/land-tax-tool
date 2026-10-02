@@ -4,7 +4,7 @@ import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260903-5";
 import { renderFiles, renderLandTable } from "./report-renderer.js?v=20260903-4";
 import { formatArea, formatLandNumber, formatMoney, parseFormattedNumber } from "./formatters.js?v=20260819-25";
 import { calculateCaseCurrentValue, calculateGiftTax, calculateHouseCurrentValue, calculateHouseOwnerDeedTax, calculateLandCurrentValue, calculateTransferCurrentValue, calculateTotalDeedTax, calculateTotalHouseCurrentValue, calculateTotalLandCurrentValue, calculateTransferTaxTotals } from "./calculations.js?v=20260903-2";
-import { renderA4Report } from "./a4-report-renderer.js?v=20260903-4";
+import { renderA4Report } from "./a4-report-renderer.js?v=20261002-1";
 import { exportExcel } from "./excel-export.js?v=20260903-4";
 import { createReportSettings } from "./report-settings.js";
 import { createHouse, ensureOwner, hasEffectiveHouseData, houseLabel, ownerName } from "./relationships.js";
@@ -467,10 +467,14 @@ elements.houseList.addEventListener("input", (event) => {
     house.ownerId = house.ownerIds[0] ?? null; recalculateSummary(); renderRelationshipWarnings(); return;
   }
   const field = event.target.dataset.houseField; if (!field) return;
-  house[field] = ["assessedValue", "shareNumerator", "shareDenominator"].includes(field) ? parseNumber(event.target.value) : (field === "ownerId" ? event.target.value || null : event.target.value);
+  house[field] = ["assessedValue", "shareNumerator", "shareDenominator"].includes(field)
+    ? (field === "assessedValue" && !event.target.value.trim() ? null : parseNumber(event.target.value))
+    : (field === "ownerId" ? event.target.value || null : event.target.value);
   recalculateSummary(); renderRelationshipWarnings();
 });
-elements.houseList.addEventListener("focusout", (event) => { if (event.target.dataset.format === "money") event.target.value = formatMoney(parseNumber(event.target.value)); });
+elements.houseList.addEventListener("focusout", (event) => {
+  if (event.target.dataset.format === "money") event.target.value = event.target.value.trim() ? formatMoney(parseNumber(event.target.value)) : "";
+});
 elements.houseList.addEventListener("click", (event) => {
   const container = event.target.closest("[data-house-id]"); const house = state.houses.find((item) => item.id === container?.dataset.houseId);
   if (event.target.matches("[data-apply-estimated-house-value]") && house?.estimatedHouseValue != null) {

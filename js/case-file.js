@@ -3,6 +3,7 @@ export const CASE_FILE_VERSION = 1;
 
 const PAGE_LABELS = {
   "land-tax": "土地增值稅試算",
+  "tax-proration": "地價稅房屋稅分算找補",
   transcript: "謄本整理",
   "land-value-update": "公告現值更新",
   "land-number-converter": "新舊地號查詢",
