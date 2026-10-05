@@ -11,7 +11,7 @@ export function getVisibleNotices(state) {
   const selected = state.displayOptions.noticeItems ?? {};
   const fixed = noticeDefinitions.filter((notice) => selected[notice.id] === true).map((notice) => ({ ...notice, type: "fixed" }));
   const custom = (state.customNotices ?? [])
-    .filter((notice) => notice.enabled !== false && String(notice.content ?? "").trim())
+    .filter((notice) => notice.enabled !== false && (String(notice.title ?? "").trim() || String(notice.content ?? "").trim()))
     .map((notice) => ({ ...notice, type: "custom" }));
   return [...fixed, ...custom];
 }

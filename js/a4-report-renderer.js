@@ -218,7 +218,8 @@ function noticesMarkup(state) {
   return `<ol class="report-notice-list">${notices.map((notice) => {
     if (notice.type === "fixed") return `<li>${escapeHtml(notice.text)}</li>`;
     const title = String(notice.title ?? "").trim(); const content = String(notice.content ?? "").trim();
-    return `<li class="report-custom-notice">${title ? `<span class="report-clause-title">${escapeHtml(title)}</span>` : ""}<div class="report-note-detail">${escapeHtml(content)}</div></li>`;
+    if (!title) return `<li class="report-custom-notice">${escapeHtml(content)}</li>`;
+    return `<li class="report-custom-notice"><span class="report-clause-title">${escapeHtml(title)}</span>${content ? `<div class="report-note-detail notice-custom-content">${escapeHtml(content)}</div>` : ""}</li>`;
   }).join("")}</ol>`;
 }
 

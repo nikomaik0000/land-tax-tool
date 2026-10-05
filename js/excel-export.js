@@ -314,7 +314,11 @@ function writeNotices(sheet, startRow, state, totalColumns, styles) {
   for (const [index, notice] of notices.entries()) {
     sheet.mergeCells(row, 1, row, totalColumns);
     const title = String(notice.title ?? "").trim(); const body = notice.type === "fixed" ? notice.text : String(notice.content ?? "").trim();
-    const content = notice.type === "fixed" ? `${index + 1}. ${body}` : `${index + 1}. ${title ? `${title}\n` : ""}${body.split("\n").map((line) => `    ${line}`).join("\n")}`;
+    const content = notice.type === "fixed"
+      ? `${index + 1}. ${body}`
+      : title
+        ? `${index + 1}. ${title}${body ? `\n${body.split("\n").map((line) => `    ${line}`).join("\n")}` : ""}`
+        : `${index + 1}. ${body}`;
     const cell = sheet.getCell(row, 1); cell.value = content; applyFont(cell, styles.font.body, false);
     cell.alignment = { horizontal: "left", vertical: "top", wrapText: true };
     cell.border = { top: { style: "thin", color: { argb: COLORS.line } } };

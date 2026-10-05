@@ -142,6 +142,7 @@
 .report-custom-note strong { color: var(--print-black); font-weight: 600; }
 .report-clause-title { color: var(--print-black); font-weight: 600; }
 .report-note-detail { margin: 1mm 0 0 7mm; padding-left: 0; }
+.report-custom-notice .notice-custom-content { margin-left: 1em; white-space: pre-wrap; }
 .report-note-list { margin: 0; padding-left: 0; list-style-position: inside; }
 .report-document.density-compact { --section-gap: calc(var(--base-section-gap) * 0.8); --header-gap: calc(var(--base-header-gap) * 0.8); --meta-gap: calc(var(--base-meta-gap) * 0.8); --clause-pad: calc(var(--base-clause-pad) * 0.8); }
 .report-document.density-compact .a4-land-table th,

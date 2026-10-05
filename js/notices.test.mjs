@@ -44,6 +44,23 @@ assert.equal((mixedHtml.match(/<li/g) ?? []).length, 4);
 
 assert.deepEqual(getVisibleNotices({ displayOptions: noFixed, customNotices: mixedCustom }).map((item) => item.id), ["notice-a", "notice-b"], "CASE E: custom-only sequence starts at 1");
 
+const titlelessHtml = render({
+  displayOptions: { ...base.displayOptions, noticeItems: { selfUseRequiresSale: true, giftNoSelfUse: false, giftTaxDeduction: false } },
+  customNotices: [{ id: "titleless", enabled: true, title: "   ", content: "  測試內容  " }]
+});
+assert.match(titlelessHtml, /<li>增值稅自用移轉原因需買賣才能適用。<\/li><li class="report-custom-notice">測試內容<\/li>/, "custom CASE A: titleless content stays on the numbered line");
+assert.doesNotMatch(titlelessHtml, /report-custom-notice"><div class="report-note-detail">/, "titleless content is not indented");
+
+const titledHtml = render({ displayOptions: noFixed, customNotices: [{ id: "titled", enabled: true, title: "  付款方式  ", content: "  測試內容  " }] });
+assert.match(titledHtml, /<li class="report-custom-notice"><span class="report-clause-title">付款方式<\/span><div class="report-note-detail notice-custom-content">測試內容<\/div><\/li>/, "custom CASE B: titled content uses the shallow custom-notice indent");
+
+const titleOnlyHtml = render({ displayOptions: noFixed, customNotices: [{ id: "title-only", enabled: true, title: "  付款方式  ", content: "   " }] });
+assert.match(titleOnlyHtml, /<li class="report-custom-notice"><span class="report-clause-title">付款方式<\/span><\/li>/, "custom CASE C: title-only notice renders without an empty detail block");
+
+const blankCustomState = { displayOptions: noFixed, customNotices: [{ id: "blank", enabled: true, title: "   ", content: "\n " }] };
+assert.deepEqual(getVisibleNotices(blankCustomState), [], "custom CASE D: blank notice does not consume a number");
+assert.doesNotMatch(render(blankCustomState), /<h3>注意事項<\/h3>/);
+
 const disabledHtml = render({ displayOptions: noFixed, customNotices: [{ ...customOnly[0], enabled: false }] });
 assert.doesNotMatch(disabledHtml, /<h3>注意事項<\/h3>/, "CASE F: empty notice section is omitted");
 
