@@ -3,6 +3,7 @@ import { calculateGiftTax, calculateTaxSummaryByOwner, calculateTotalDeedTax, ca
 import { formatArea, formatLandNumber, formatMoney } from "./formatters.js?v=20260819-25";
 import { hasEffectiveHouseData, ownerName } from "./relationships.js";
 import { getTaxSummaryDisplayValue, getVisibleTaxSummaryItems } from "./tax-summary-display.js";
+import { getVisibleNotices } from "./notices.js";
 import { formatZoningForPrint, getVisiblePrintColumns } from "./zoning-print.js";
 import { normalizeDistrict } from "./land-value-normalization.js";
 import { getFinalTransferTaxes } from "./land-zoning.js";
@@ -27,7 +28,10 @@ export function getReportRowCount(lands, showLandZoning = false, zoningPrintLayo
 
 export function getReportDensity(state) {
   const rowCount = getReportRowCount(state.lands, state.displayOptions.showLandZoning, state.displayOptions.zoningPrintLayout);
-  const clauseCount = state.selectedClauses.length + (state.customNotes ?? []).filter((note) => note.enabled !== false && String(note.content ?? "").trim()).length;
+  const notices = getVisibleNotices(state);
+  const clauseCount = state.selectedClauses.length
+    + (state.customNotes ?? []).filter((note) => note.enabled !== false && String(note.content ?? "").trim()).length
+    + notices.length;
   const score = rowCount + clauseCount * 1.5 + (state.displayOptions.showTaxSummary ? 0.5 : 0) + (state.giftTax?.enabled ? 5 : 0);
   const density = score <= 5 ? "normal" : score <= 10 ? "compact" : "dense";
   return { density, rowCount, warning: score > 14 || rowCount > 9 };
@@ -208,6 +212,16 @@ function customNotesMarkup(notes = []) {
   }).join("");
 }
 
+function noticesMarkup(state) {
+  const notices = getVisibleNotices(state);
+  if (!notices.length) return "";
+  return `<ol class="report-notice-list">${notices.map((notice) => {
+    if (notice.type === "fixed") return `<li>${escapeHtml(notice.text)}</li>`;
+    const title = String(notice.title ?? "").trim(); const content = String(notice.content ?? "").trim();
+    return `<li class="report-custom-notice">${title ? `<span class="report-clause-title">${escapeHtml(title)}</span>` : ""}<div class="report-note-detail">${escapeHtml(content)}</div></li>`;
+  }).join("")}</ol>`;
+}
+
 export function renderA4Report(state) {
   const { density, rowCount, warning } = getReportDensity(state);
   const totals = calculateTransferTaxTotals(state.lands);
@@ -217,6 +231,7 @@ export function renderA4Report(state) {
   const portraitGiftWarning = state.displayOptions.orientation === "portrait" && giftColumnCount > 8;
   const taxSummary = state.displayOptions.showTaxSummary ? taxSummaryMarkup(state, totals, giftResult) : "";
   const noteMarkup = selectedClauseMarkup(state.selectedClauses) + customNotesMarkup(state.customNotes);
+  const noticeMarkup = noticesMarkup(state);
   const columns = getVisiblePrintColumns(state.displayOptions);
 
   const html = `<div class="report-document density-${density}">
@@ -242,6 +257,8 @@ export function renderA4Report(state) {
     </section>` : ""}
 
     ${noteMarkup ? `<section class="report-section report-notes-section"><h3>備註</h3>${noteMarkup}</section>` : ""}
+
+    ${noticeMarkup ? `<section class="report-section report-notices-section"><h3>注意事項</h3>${noticeMarkup}</section>` : ""}
   </div>`;
 
   return {

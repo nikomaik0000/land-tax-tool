@@ -1,6 +1,7 @@
 import { calculateGiftTax } from "./calculations.js";
 import { clauses } from "./clauses.js";
 import { formatMoney, parseFormattedNumber } from "./formatters.js";
+import { defaultNoticeItems, noticeDefinitions } from "./notices.js";
 
 let settingsInstance = 0;
 
@@ -19,10 +20,13 @@ export function createDefaultReportConfiguration() {
       printLandColumns: { district: true, section: true, subsection: true, owner: true },
       showSelfUseTax: true,
       showTaxSummary: true,
-      taxSummaryItems: { selfUseTax: true, generalTax: true, deedTax: false, giftTax: false }
+      taxSummaryItems: { selfUseTax: true, generalTax: true, deedTax: false, giftTax: false },
+      showNotices: true,
+      noticeItems: { ...defaultNoticeItems }
     },
     selectedClauses: ["selfUse", "houseLandTax", "post2016"],
     customNotes: [],
+    customNotices: [],
     giftTax: {
       enabled: false,
       giftDate: new Date().toLocaleDateString("en-CA"),
@@ -42,7 +46,7 @@ export function createDefaultReportConfiguration() {
 
 function checked(value) { return value ? " checked" : ""; }
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
-const createNoteId = () => globalThis.crypto?.randomUUID ? `note-${globalThis.crypto.randomUUID()}` : `note-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const createItemId = (prefix) => globalThis.crypto?.randomUUID ? `${prefix}-${globalThis.crypto.randomUUID()}` : `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 export function createReportSettings({ container, state, onChange = () => {}, onRequeryZoning = () => {} }) {
   const id = `report-settings-${++settingsInstance}`;
@@ -83,7 +87,15 @@ export function createReportSettings({ container, state, onChange = () => {}, on
           </div>
           <label class="check-option"><input data-toggle="showCaseTotal" type="checkbox"${checked(state.displayOptions.showCaseTotal)}><span>顯示案件總計（多人時）</span></label>
         </div>
-        <div class="settings-group"><h3>備註條款</h3><div class="clause-options">${clauses.map((clause) => `<label class="check-option"><input data-clause value="${clause.id}" type="checkbox"${checked(state.selectedClauses.includes(clause.id))}><span>${clause.label}</span></label>`).join("")}</div><div class="custom-notes-divider"></div><div class="custom-notes-heading"><span>自訂備註</span><button class="btn btn-secondary" data-add-custom-note type="button">＋ 新增備註</button></div><div class="custom-notes-list" data-custom-notes-list></div></div>
+        <div class="settings-group"><h3>備註條款</h3><div class="clause-options">${clauses.map((clause) => `<label class="check-option"><input data-clause value="${clause.id}" type="checkbox"${checked(state.selectedClauses.includes(clause.id))}><span>${clause.label}</span></label>`).join("")}</div></div>
+        <div class="settings-group"><h3>自訂備註</h3><div class="custom-notes-heading"><span></span><button class="btn btn-secondary" data-add-custom-note type="button">＋ 新增備註</button></div><div class="custom-notes-list" data-custom-notes-list></div></div>
+        <div class="settings-group"><h3>注意事項</h3>
+          <label class="check-option"><input data-toggle="showNotices" type="checkbox"${checked(state.displayOptions.showNotices)}><span>顯示注意事項</span></label>
+          <div class="nested-options" data-notice-options${state.displayOptions.showNotices ? "" : " hidden"}>
+            ${noticeDefinitions.map((notice) => `<label class="check-option"><input data-notice-item value="${notice.id}" type="checkbox"${checked(state.displayOptions.noticeItems[notice.id])}><span>${notice.text}</span></label>`).join("")}
+            <div class="custom-notes-divider"></div><div class="custom-notes-heading"><span>自訂注意事項</span><button class="btn btn-secondary" data-add-custom-notice type="button">＋ 新增注意事項</button></div><div class="custom-notes-list" data-custom-notices-list></div>
+          </div>
+        </div>
         <div class="settings-group"><h3>排版設定</h3>
           <div class="layout-setting-row"><span>表格行距</span><div class="option-row compact-option-row">${radio("tableSpacing", "compact", "緊湊")}${radio("tableSpacing", "standard", "標準")}${radio("tableSpacing", "relaxed", "寬鬆")}</div></div>
           <div class="layout-setting-row"><span>段落間距</span><div class="option-row compact-option-row">${radio("sectionSpacing", "compact", "緊湊")}${radio("sectionSpacing", "standard", "標準")}${radio("sectionSpacing", "relaxed", "寬鬆")}</div></div>
@@ -96,6 +108,7 @@ export function createReportSettings({ container, state, onChange = () => {}, on
   const header = container.querySelector(".settings-accordion-header");
   const content = container.querySelector(".settings-accordion-content");
   const notesList = container.querySelector("[data-custom-notes-list]");
+  const noticesList = container.querySelector("[data-custom-notices-list]");
   const autoGrow = (textarea) => { textarea.style.height = "auto"; textarea.style.height = `${Math.min(180, Math.max(88, textarea.scrollHeight))}px`; };
   const renderCustomNotes = () => {
     notesList.innerHTML = (state.customNotes ?? []).map((note) => `<article class="custom-note-item" data-custom-note-id="${note.id}">
@@ -107,6 +120,16 @@ export function createReportSettings({ container, state, onChange = () => {}, on
     notesList.querySelectorAll("textarea").forEach(autoGrow);
   };
   renderCustomNotes();
+  const renderCustomNotices = () => {
+    noticesList.innerHTML = (state.customNotices ?? []).map((notice) => `<article class="custom-note-item" data-custom-notice-id="${notice.id}">
+      <label class="check-option"><input data-custom-notice-enabled type="checkbox"${checked(notice.enabled !== false)}><span>顯示</span></label>
+      <label class="field"><span>標題</span><input data-custom-notice-title type="text" value="${escapeHtml(notice.title)}"></label>
+      <label class="field"><span>內容</span><textarea data-custom-notice-content rows="3">${escapeHtml(notice.content)}</textarea></label>
+      <div class="custom-note-actions"><button class="text-button" data-remove-custom-notice type="button">刪除</button></div>
+    </article>`).join("");
+    noticesList.querySelectorAll("textarea").forEach(autoGrow);
+  };
+  renderCustomNotices();
   const sync = () => {
     header.setAttribute("aria-expanded", String(state.settingsExpanded));
     content.hidden = !state.settingsExpanded;
@@ -114,8 +137,10 @@ export function createReportSettings({ container, state, onChange = () => {}, on
       input.checked = input.dataset.toggle === "giftTax" ? Boolean(state.giftTax.enabled) : Boolean(state.displayOptions[input.dataset.toggle]);
     }
     for (const input of container.querySelectorAll("[data-summary-item]")) input.checked = Boolean(state.displayOptions.taxSummaryItems[input.value]);
+    for (const input of container.querySelectorAll("[data-notice-item]")) input.checked = Boolean(state.displayOptions.noticeItems[input.value]);
     container.querySelector("[data-gift-fields]").hidden = !state.giftTax.enabled;
     container.querySelector("[data-summary-options]").hidden = !state.displayOptions.showTaxSummary;
+    container.querySelector("[data-notice-options]").hidden = !state.displayOptions.showNotices;
     container.querySelector("[data-zoning-options]").hidden = !state.displayOptions.showLandZoning;
     container.querySelector("[data-gift-result]").textContent = formatMoney(state.giftTax.result?.finalGiftTax ?? 0);
     for (const input of container.querySelectorAll("[data-gift-money]")) if (document.activeElement !== input) input.value = formatMoney(state.giftTax[input.dataset.giftMoney]);
@@ -132,22 +157,36 @@ export function createReportSettings({ container, state, onChange = () => {}, on
     if (input.dataset.toggle === "showTaxSummary") state.displayOptions.showTaxSummary = input.checked;
     if (input.dataset.toggle === "showLandZoning") state.displayOptions.showLandZoning = input.checked;
     if (input.dataset.toggle === "showCaseTotal") state.displayOptions.showCaseTotal = input.checked;
+    if (input.dataset.toggle === "showNotices") state.displayOptions.showNotices = input.checked;
     if (input.dataset.toggle === "giftTax") {
       state.giftTax.enabled = input.checked;
     }
     if (input.dataset.summaryItem !== undefined) state.displayOptions.taxSummaryItems[input.value] = input.checked;
+    if (input.dataset.noticeItem !== undefined) state.displayOptions.noticeItems[input.value] = input.checked;
     if (input.dataset.printLandColumn) state.displayOptions.printLandColumns[input.dataset.printLandColumn] = input.checked;
     if (input.dataset.clause !== undefined) state.selectedClauses = [...container.querySelectorAll("[data-clause]:checked")].map((item) => item.value);
     if (input.dataset.customNoteEnabled !== undefined) {
       const note = state.customNotes.find((item) => item.id === input.closest("[data-custom-note-id]").dataset.customNoteId);
       if (note) note.enabled = input.checked;
     }
+    if (input.dataset.customNoticeEnabled !== undefined) {
+      const notice = state.customNotices.find((item) => item.id === input.closest("[data-custom-notice-id]").dataset.customNoticeId);
+      if (notice) notice.enabled = input.checked;
+    }
     changed();
   });
   container.addEventListener("click", (event) => {
     if (event.target.matches("[data-requery-zoning]")) { onRequeryZoning(); return; }
     if (event.target.matches("[data-add-custom-note]")) {
-      state.customNotes ??= []; state.customNotes.push({ id: createNoteId(), enabled: true, title: "", content: "" }); renderCustomNotes(); onChange(); return;
+      state.customNotes ??= []; state.customNotes.push({ id: createItemId("note"), enabled: true, title: "", content: "" }); renderCustomNotes(); onChange(); return;
+    }
+    if (event.target.matches("[data-add-custom-notice]")) {
+      state.customNotices ??= []; state.customNotices.push({ id: createItemId("notice"), enabled: true, title: "", content: "" }); renderCustomNotices(); onChange(); return;
+    }
+    if (event.target.matches("[data-remove-custom-notice]")) {
+      const item = event.target.closest("[data-custom-notice-id]"); const notice = state.customNotices.find((entry) => entry.id === item.dataset.customNoticeId);
+      if ((notice?.title || notice?.content) && !window.confirm("確定刪除此注意事項？")) return;
+      state.customNotices = state.customNotices.filter((entry) => entry.id !== item.dataset.customNoticeId); renderCustomNotices(); onChange();
     }
     if (event.target.matches("[data-remove-custom-note]")) {
       const item = event.target.closest("[data-custom-note-id]"); const note = state.customNotes.find((entry) => entry.id === item.dataset.customNoteId);
@@ -157,6 +196,12 @@ export function createReportSettings({ container, state, onChange = () => {}, on
   });
   container.addEventListener("focusin", (event) => { if (event.target.dataset.giftMoney) event.target.value = String(state.giftTax[event.target.dataset.giftMoney] || ""); });
   container.addEventListener("input", (event) => {
+    const noticeItem = event.target.closest("[data-custom-notice-id]");
+    if (noticeItem && (event.target.matches("[data-custom-notice-title]") || event.target.matches("[data-custom-notice-content]"))) {
+      const notice = state.customNotices.find((item) => item.id === noticeItem.dataset.customNoticeId);
+      if (notice) notice[event.target.matches("[data-custom-notice-title]") ? "title" : "content"] = event.target.value;
+      if (event.target.matches("textarea")) autoGrow(event.target); onChange(); return;
+    }
     const noteItem = event.target.closest("[data-custom-note-id]");
     if (noteItem && (event.target.matches("[data-custom-note-title]") || event.target.matches("[data-custom-note-content]"))) {
       const note = state.customNotes.find((item) => item.id === noteItem.dataset.customNoteId);
@@ -171,5 +216,5 @@ export function createReportSettings({ container, state, onChange = () => {}, on
   });
   container.addEventListener("focusout", (event) => { const field = event.target.dataset.giftMoney; if (field) event.target.value = formatMoney(state.giftTax[field]); });
   state.giftTax.result = calculateGiftTax(state); sync();
-  return { sync };
+  return { sync, syncCollections: () => { renderCustomNotes(); renderCustomNotices(); sync(); } };
 }

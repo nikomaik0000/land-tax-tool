@@ -4,9 +4,9 @@ import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260903-5";
 import { renderFiles, renderLandTable } from "./report-renderer.js?v=20260903-4";
 import { formatArea, formatLandNumber, formatMoney, parseFormattedNumber } from "./formatters.js?v=20260819-25";
 import { calculateCaseCurrentValue, calculateGiftTax, calculateHouseCurrentValue, calculateHouseOwnerDeedTax, calculateLandCurrentValue, calculateTransferCurrentValue, calculateTotalDeedTax, calculateTotalHouseCurrentValue, calculateTotalLandCurrentValue, calculateTransferTaxTotals } from "./calculations.js?v=20260903-2";
-import { renderA4Report } from "./a4-report-renderer.js?v=20261002-1";
-import { exportExcel } from "./excel-export.js?v=20260903-4";
-import { createReportSettings } from "./report-settings.js";
+import { renderA4Report } from "./a4-report-renderer.js?v=20261002-3";
+import { exportExcel } from "./excel-export.js?v=20261002-2";
+import { createReportSettings } from "./report-settings.js?v=20261002-1";
 import { createHouse, ensureOwner, hasEffectiveHouseData, houseLabel, ownerName } from "./relationships.js";
 import { orderLandsByDocuments, sortDocumentsByLand } from "./document-order.js";
 import { normalizeCity } from "./land-value-normalization.js";
@@ -56,9 +56,19 @@ export function serializeLandTaxCase() {
 
 export function restoreLandTaxCase(snapshot) {
   const restored = structuredClone(snapshot);
-  Object.assign(state, restored, { files: [] });
+  Object.assign(state, restored, {
+    files: [],
+    displayOptions: {
+      ...state.displayOptions,
+      ...(restored.displayOptions ?? {}),
+      taxSummaryItems: { ...state.displayOptions.taxSummaryItems, ...(restored.displayOptions?.taxSummaryItems ?? {}) },
+      noticeItems: { ...state.displayOptions.noticeItems, ...(restored.displayOptions?.noticeItems ?? {}) }
+    },
+    customNotices: Array.isArray(restored.customNotices) ? restored.customNotices : []
+  });
   elements.caseName.value = state.caseName ?? "";
   restoredManualLandPrefix = [];
+  settingsController?.syncCollections();
   refresh();
   savePageState();
 }

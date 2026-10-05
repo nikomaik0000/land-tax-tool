@@ -26,11 +26,13 @@ Object.assign(state, restored, {
     ...reportConfiguration.displayOptions,
     ...(restored.displayOptions ?? {}),
     taxSummaryItems: { ...reportConfiguration.displayOptions.taxSummaryItems, ...(restored.displayOptions?.taxSummaryItems ?? {}) },
+    noticeItems: { ...reportConfiguration.displayOptions.noticeItems, ...(restored.displayOptions?.noticeItems ?? {}) },
     printLandColumns: { ...reportConfiguration.displayOptions.printLandColumns, ...(restored.displayOptions?.printLandColumns ?? {}) }
   },
   giftTax: { ...reportConfiguration.giftTax, ...(restored.giftTax ?? {}) },
   selectedClauses: restored.selectedClauses ?? reportConfiguration.selectedClauses
 });
+state.customNotices = Array.isArray(restored.customNotices) ? restored.customNotices : reportConfiguration.customNotices;
 state.documentOrderMode = restored.documentOrderMode === "manual" ? "manual" : "auto";
 migrateRelationshipState(state);
 

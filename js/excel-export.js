@@ -3,6 +3,7 @@ import { formatLandNumber } from "./formatters.js?v=20260819-25";
 import { calculateTaxSummaryByOwner, calculateTotalDeedTax } from "./calculations.js";
 import { hasEffectiveHouseData, ownerName } from "./relationships.js";
 import { getVisibleTaxSummaryItems } from "./tax-summary-display.js";
+import { getVisibleNotices } from "./notices.js";
 import { normalizeDistrict } from "./land-value-normalization.js";
 import { getFinalTransferTaxes } from "./land-zoning.js";
 
@@ -305,6 +306,23 @@ function writeClauses(sheet, startRow, state, totalColumns, styles) {
   return row;
 }
 
+function writeNotices(sheet, startRow, state, totalColumns, styles) {
+  const notices = getVisibleNotices(state);
+  if (!notices.length) return startRow;
+  addSectionTitle(sheet, startRow, "注意事項", totalColumns, styles.font.body + 0.5, styles.spacing.section);
+  let row = startRow + 1;
+  for (const [index, notice] of notices.entries()) {
+    sheet.mergeCells(row, 1, row, totalColumns);
+    const title = String(notice.title ?? "").trim(); const body = notice.type === "fixed" ? notice.text : String(notice.content ?? "").trim();
+    const content = notice.type === "fixed" ? `${index + 1}. ${body}` : `${index + 1}. ${title ? `${title}\n` : ""}${body.split("\n").map((line) => `    ${line}`).join("\n")}`;
+    const cell = sheet.getCell(row, 1); cell.value = content; applyFont(cell, styles.font.body, false);
+    cell.alignment = { horizontal: "left", vertical: "top", wrapText: true };
+    cell.border = { top: { style: "thin", color: { argb: COLORS.line } } };
+    sheet.getRow(row).height = Math.max(styles.spacing.data, content.split("\n").length * (styles.font.body + 7)); row += 1;
+  }
+  return row;
+}
+
 function applyPrintSettings(sheet, state, totalColumns, finalRow) {
   sheet.pageSetup = {
     paperSize: 9,
@@ -332,7 +350,10 @@ export async function buildExcelWorkbook(state, totals, ExcelJS = globalThis.Exc
   if (row > main.nextRow + 1) row += 1;
   row = writeTaxSummary(sheet, row, state, totals, totalColumns, styles);
   if (row > main.nextRow + 1) row += 1;
+  const noticesStart = row;
   row = writeClauses(sheet, row, state, totalColumns, styles);
+  if (row > noticesStart) row += 1;
+  row = writeNotices(sheet, row, state, totalColumns, styles);
   sheet.views = [{ state: "frozen", ySplit: main.headerRow, showGridLines: false }];
   applyPrintSettings(sheet, state, totalColumns, Math.max(1, row - 1));
   return workbook;

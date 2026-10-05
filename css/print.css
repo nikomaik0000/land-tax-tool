@@ -130,6 +130,9 @@
 .gift-tax-table .gift-tax-final-label { padding-right: 3px; color: var(--print-black); text-align: center; }
 .gift-tax-table .gift-tax-final-amount { color: var(--print-black); font-size: var(--report-tax-size); font-weight: 600; text-align: right; white-space: nowrap; }
 .report-notes-section { margin-top: var(--section-gap); }
+.report-notices-section { margin-top: var(--section-gap); }
+.report-notice-list { margin: 0; padding-left: 6mm; color: var(--print-dark); font-size: var(--report-note-size); line-height: var(--clause-line-height); list-style-position: outside; }
+.report-notice-list li { padding: calc(var(--clause-pad) * 0.7) 0; padding-left: 1mm; }
 .report-clause { padding: var(--clause-pad) 0; border-top: 1px solid var(--print-line); color: var(--print-dark); font-size: var(--report-note-size); line-height: var(--clause-line-height); }
 .report-clause:first-of-type { border-top: 0; }
 .report-clause p { margin: 0; }
