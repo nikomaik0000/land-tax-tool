@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 5,
+  "shared": {
+    "caseName": "立源富立方",
+    "seller": "立源",
+    "handoverDate": "2026-10-01",
+    "notes": []
+  },
+  "customer": {
+    "houseTax": {
+      "taxableMonths": 13,
+      "taxStartDate": "2025-06-01",
+      "prorationStartDate": "2026-07-01",
+      "prorationEndDate": "2026-10-01",
+      "payer": "buyer",
+      "taxNote": ""
+    },
+    "landTax": {
+      "rate": 1,
+      "taxYear": 2026,
+      "prorationStartDate": "2026-01-01",
+      "prorationEndDate": "2026-10-01",
+      "payer": "seller"
+    }
+  }
+}

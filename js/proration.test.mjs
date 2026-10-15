@@ -12,7 +12,7 @@ const oppositeLand = calculateLandTax({ ...landTax, payer: "seller" });
 assert.deepEqual({ days: house.prorationDays, amount: house.prorationAmount, settlement: house.settlement }, { days: 93, amount: 11029, settlement: -11029 });
 assert.deepEqual({ start: house.taxStartDate, end: house.taxEndDate, total: house.totalTaxDays }, { start: "2025-06-01", end: "2026-06-30", total: 395 });
 assert.deepEqual({ taxable: land.taxableLandValue, tax: land.taxAmount, days: land.prorationDays, amount: land.prorationAmount, settlement: land.settlement }, { taxable: 492552, tax: 4926, days: 274, amount: 3698, settlement: -3698 });
-assert.equal(calculateCombinedSettlement(house, land), -14727, "A3 Golden Case");
+assert.equal(calculateCombinedSettlement(house, land), -14727, "同方向相加，非相反方向 Golden Case");
 assert.equal(settlementText(-14727, "鄭啟明", "立源"), "立源應補鄭啟明 $14,727");
 assert.deepEqual(calculateHouseTax({ ...houseTax, handoverDate: "2026-09-30" }), house, "交屋日不得改變總天數或找補期間");
 
@@ -60,6 +60,7 @@ assert.doesNotMatch(html, /\$\s*(?:11,029|3,698|7,331)/);
 assert.match(html, /<strong>備註：<\/strong>114 年尚有 1 個月未課稅/);
 assert.match(html, /46,845 × 93 \/ 395/); assert.match(html, /4,926 × 274 \/ 365/);
 assert.match(html, /report-notes-section report-section proration-section"><h3 class="proration-section-title">其他備註<\/h3>/); assert.match(html, /一般備註一/); assert.doesNotMatch(html, /房屋現值|公式估算|找補結果/);
+assert.ok(html.indexOf("<strong>1.</strong> 一般備註一") < html.indexOf("<strong>2.</strong> 一般備註二"), "其他備註依原順序編號");
 const noNotesHtml = renderProrationReport({ ...state, shared: { ...state.shared, notes: [] }, customer: { ...state.customer, houseTax: { ...state.customer.houseTax, taxNote: "" } } }, { house, land: oppositeLand, total: -7331 });
 assert.doesNotMatch(noNotesHtml, /proration-tax-note|>其他備註<\/h3>/);
 

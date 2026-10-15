@@ -32,15 +32,17 @@ function houseSection(tax, result, buyer, seller) {
 
 function landSection(tax, result, buyer, seller) {
   return `<section class="report-section proration-section">${sectionHeading("地價稅分算", tax, buyer, seller)}
-    <table class="report-owner-tax-table proration-report-table proration-land-table"><thead><tr><th>申報地價</th><th>土地面積</th><th>土地持分</th><th>課稅地價</th><th>稅率</th></tr></thead><tbody><tr><td>${money(tax.declaredLandValue)} 元／㎡</td><td>${decimalNumber(tax.area)} ㎡</td><td>${escapeHtml(tax.shareNumerator)} / ${escapeHtml(tax.shareDenominator)}</td><td>${money(result.taxableLandValue)}</td><td>${escapeHtml(tax.rate || "—")}${tax.rate !== "" ? "%" : ""}</td></tr></tbody>
+    <table class="report-owner-tax-table proration-report-table proration-land-table"><thead><tr><th>申報地價</th><th>土地總面積</th><th>土地持分</th><th>課稅地價</th><th>稅率</th></tr></thead><tbody><tr><td>${money(tax.declaredLandValue)} 元／㎡</td><td>${decimalNumber(tax.area)} ㎡</td><td>${escapeHtml(tax.shareNumerator)} / ${escapeHtml(tax.shareDenominator)}</td><td>${money(result.taxableLandValue)}</td><td>${escapeHtml(tax.rate || "—")}${tax.rate !== "" ? "%" : ""}</td></tr></tbody>
     <thead><tr><th>完整地價稅</th><th>本次找補期間</th><th>天數</th><th>計算</th><th>本次找補金額</th></tr></thead><tbody><tr><td>${money(result.taxAmount)}</td><td>${period(result.prorationStartDate, result.prorationEndDate, result.prorationDays)}</td><td>${result.valid ? `${result.prorationDays} / ${result.totalTaxDays}` : "—"}</td><td>${result.valid ? `${money(result.amount)} × ${result.prorationDays} / ${result.totalTaxDays}` : "—"}</td><td>${result.valid ? money(result.prorationAmount) : "—"}</td></tr></tbody>
     <tfoot><tr><th colspan="4">${result.valid ? escapeHtml(resultName(result, buyer, seller)) : escapeHtml(result.error)}</th><td>${result.valid ? money(result.prorationAmount) : "—"}</td></tr></tfoot></table></section>`;
 }
 
-export function renderProrationReport(state, results) {
+export function renderProrationReport(state, results, { batch = false } = {}) {
   const shared = state.shared; const customer = state.customer;
   const notes = (shared.notes ?? []).filter((note) => String(note.content ?? "").trim());
-  const title = String(shared.caseName ?? "").trim() || "地價稅房屋稅 分算找補";
+  const caseTitle = String(shared.caseName ?? "").trim() || "地價稅房屋稅 分算找補";
+  const unitTitle = batch ? `${String(customer.label ?? "").trim()}${String(customer.doorplate ?? "").trim() ? `（${String(customer.doorplate).trim()}）` : ""}` : "";
+  const title = unitTitle ? `${unitTitle} ${caseTitle}` : caseTitle;
   const houseText = results.house.valid ? settlementText(results.house.settlement, customer.buyer, shared.seller) : "—";
   const landText = results.land.valid ? settlementText(results.land.settlement, customer.buyer, shared.seller) : "—";
   const totalText = results.house.valid && results.land.valid ? settlementText(results.total, customer.buyer, shared.seller) : "—";

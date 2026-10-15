@@ -21,11 +21,15 @@ node_modules/
 coverage/
 
 # Generated output and temporary files
+output/
 outputs/
 tmp/
 temp/
 *.log
 *.tmp
+
+# Local documents used for manual testing; may contain personal data
+reference/測試用/
 
 # FTP client state / local deployment configuration
 .ftp-deploy-sync-state.json

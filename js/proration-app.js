@@ -1,14 +1,16 @@
+import { setupBatchWorkspace } from "./proration-batch-app.js";
 import { setupCaseFileActions } from "./case-file.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
 import { formatMoney, parseFormattedNumber } from "./formatters.js";
 import { calculateCombinedSettlement, calculateHouseTax, calculateLandTax, settlementText } from "./proration-calculations.js?v=20261001-1";
-import { renderProrationReport } from "./proration-report.js?v=20261002-1";
-import { exportProrationExcel } from "./proration-excel.js?v=20261001-1";
+import { renderProrationReport } from "./proration-report.js?v=20261015-1";
+import { exportProrationExcel } from "./proration-excel.js?v=20261015-1";
 import { normalizeProrationState } from "./proration-state.js?v=20261001-1";
 
 const STORAGE_KEY = "landTool.prorationState";
 const createId = () => globalThis.crypto?.randomUUID?.() ?? `note-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-const $ = (selector) => document.querySelector(selector);
+const singleRoot = document.querySelector("#singleProrationWorkspace");
+const $ = (selector) => singleRoot.querySelector(selector);
 let state = normalizeProrationState(loadSessionState(STORAGE_KEY));
 let clearing = false;
 let validationRequested = false;
@@ -41,7 +43,7 @@ function renderResultCard(kind, result) {
 }
 
 function renderValidation(reportResults) {
-  document.querySelectorAll("[aria-invalid]").forEach((input) => input.removeAttribute("aria-invalid"));
+  singleRoot.querySelectorAll("[aria-invalid]").forEach((input) => input.removeAttribute("aria-invalid"));
   for (const [key, result] of [["houseTax", reportResults.house], ["landTax", reportResults.land]]) {
     const section = $(`[data-tax-section="${key}"]`);
     const message = section.querySelector('[data-result="error"]');
@@ -66,16 +68,16 @@ function refresh() {
 }
 
 function syncInputs() {
-  document.querySelectorAll("[data-shared-field]").forEach((input) => { input.value = state.shared[input.dataset.sharedField] ?? ""; });
-  document.querySelectorAll("[data-customer-field]").forEach((input) => { input.value = state.customer[input.dataset.customerField] ?? ""; });
-  document.querySelectorAll("[data-tax-section]").forEach((section) => { const tax = state.customer[section.dataset.taxSection]; section.querySelectorAll("[data-tax-field]").forEach((input) => { const value = tax[input.dataset.taxField] ?? ""; input.value = input.matches("[data-money-field]") && value !== "" ? formatMoney(value) : value; }); });
+  singleRoot.querySelectorAll("[data-shared-field]").forEach((input) => { input.value = state.shared[input.dataset.sharedField] ?? ""; });
+  singleRoot.querySelectorAll("[data-customer-field]").forEach((input) => { input.value = state.customer[input.dataset.customerField] ?? ""; });
+  singleRoot.querySelectorAll("[data-tax-section]").forEach((section) => { const tax = state.customer[section.dataset.taxSection]; section.querySelectorAll("[data-tax-field]").forEach((input) => { const value = tax[input.dataset.taxField] ?? ""; input.value = input.matches("[data-money-field]") && value !== "" ? formatMoney(value) : value; }); });
 }
 
 function renderNotes() {
   $("#notesList").innerHTML = state.shared.notes.map((note, index) => `<article class="custom-note-item" data-note-id="${note.id}"><label class="field"><span>其他備註 ${index + 1}</span><textarea rows="3" data-note-content>${String(note.content).replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[char])}</textarea></label><div class="custom-note-actions"><button class="text-button" data-remove-note type="button">刪除</button></div></article>`).join("");
 }
 
-document.addEventListener("input", (event) => {
+singleRoot.addEventListener("input", (event) => {
   if (event.target.dataset.sharedField) { state.shared[event.target.dataset.sharedField] = event.target.value; refresh(); return; }
   if (event.target.dataset.customerField) { state.customer[event.target.dataset.customerField] = event.target.value; refresh(); return; }
   const section = event.target.closest("[data-tax-section]"); const field = event.target.dataset.taxField;
@@ -87,8 +89,8 @@ document.addEventListener("input", (event) => {
   }
   const noteItem = event.target.closest("[data-note-id]"); if (noteItem && event.target.matches("[data-note-content]")) { const note = state.shared.notes.find((item) => item.id === noteItem.dataset.noteId); if (note) note.content = event.target.value; refresh(); }
 });
-document.addEventListener("focusin", (event) => { if (event.target.matches("[data-money-field]")) event.target.value = event.target.value.replaceAll(",", ""); });
-document.addEventListener("focusout", (event) => { if (event.target.matches("[data-money-field]")) event.target.value = event.target.value.trim() ? formatMoney(parseFormattedNumber(event.target.value)) : ""; });
+singleRoot.addEventListener("focusin", (event) => { if (event.target.matches("[data-money-field]")) event.target.value = event.target.value.replaceAll(",", ""); });
+singleRoot.addEventListener("focusout", (event) => { if (event.target.matches("[data-money-field]")) event.target.value = event.target.value.trim() ? formatMoney(parseFormattedNumber(event.target.value)) : ""; });
 $("#calculateProration").addEventListener("click", () => { validationRequested = true; const value = refresh(); if (value.house.valid && value.land.valid) $("#calculationResults").scrollIntoView({ behavior: "smooth", block: "start" }); });
 $("#addNote").addEventListener("click", () => { state.shared.notes.push({ id: createId(), content: "" }); renderNotes(); save(); $("#notesList article:last-child textarea")?.focus(); });
 $("#notesList").addEventListener("click", (event) => { if (!event.target.matches("[data-remove-note]")) return; const item = event.target.closest("[data-note-id]"); const note = state.shared.notes.find((entry) => entry.id === item.dataset.noteId); if (note?.content && !window.confirm("確定刪除此備註？")) return; state.shared.notes = state.shared.notes.filter((entry) => entry.id !== item.dataset.noteId); renderNotes(); refresh(); });
@@ -99,3 +101,5 @@ $("#printReport").addEventListener("click", () => { document.title = `${(state.s
 $("#downloadExcel").addEventListener("click", async () => { const button = $("#downloadExcel"); const label = button.textContent; button.disabled = true; button.textContent = "產生中…"; try { await exportProrationExcel(state, results()); } catch (error) { window.alert(error.message || "Excel 產生失敗，請稍後再試。"); } finally { button.disabled = false; button.textContent = label; } });
 function updatePreviewScale() { const sheet = $("#a4Sheet"); const preview = $("#reportPreview"); const viewport = $("#a4PreviewViewport"); const width = 210 * 96 / 25.4; const height = 297 * 96 / 25.4; const style = getComputedStyle(preview); const available = Math.max(0, preview.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)); const scale = Math.min(1, available / width); sheet.style.transform = `scale(${scale})`; viewport.style.width = `${width * scale}px`; viewport.style.height = `${Math.max(height, sheet.scrollHeight) * scale}px`; }
 new ResizeObserver(updatePreviewScale).observe($("#reportPreview")); window.addEventListener("pagehide", save); syncInputs(); renderNotes(); refresh();
+
+setupBatchWorkspace({ root: document.querySelector("#batchProrationWorkspace"), singleRoot, getSingleState: serializeProrationCase, onShowSingle: updatePreviewScale });

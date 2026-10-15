@@ -37,6 +37,8 @@
 .report-header { margin-bottom: var(--header-gap); text-align: center; }
 .report-header h2 { margin: 0; color: var(--print-black); font-size: var(--report-title-size); font-weight: 600; letter-spacing: 0.08em; }
 .batch-report-host { display: none; }
+.batch-report-host.is-measuring { display: block; position: absolute; top: 0; left: -10000px; width: 194mm; visibility: hidden; }
+.batch-report-host.is-measuring .a4-sheet { width: 194mm; max-width: 194mm; height: auto; min-height: 0; margin: 0; padding: 0; transform: none !important; box-shadow: none; }
 .report-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 1mm 6mm; margin-top: 2mm; color: var(--print-dark); font-size: 9.75px; }
 .report-table { width: 100%; table-layout: fixed; border: 1.5px solid var(--print-black); border-collapse: collapse; color: var(--print-dark); font-size: 10px; line-height: 1.4; }
 .report-table th,
@@ -206,6 +208,8 @@
   .batch-report-host.is-print-ready { display: block !important; width: 100%; margin: 0; padding: 0; background: var(--print-white); }
   .batch-report-document { width: 100%; color: var(--print-dark); }
   .batch-report-document .report-header { break-after: avoid; }
+  .batch-report-host.is-print-ready .a4-sheet { width: 194mm; max-width: 194mm; height: auto; min-height: 0; margin: 0 auto; padding: 0; break-inside: avoid; page-break-inside: avoid; }
+  .batch-report-host.is-print-ready .a4-sheet + .a4-sheet { break-before: page; page-break-before: always; }
   .report-table thead { display: table-header-group; }
   .report-table tfoot { display: table-footer-group; }
   .report-table tr { break-inside: avoid; page-break-inside: avoid; }

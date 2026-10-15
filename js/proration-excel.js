@@ -1,15 +1,4 @@
-const EXCELJS_URL = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
-let excelJsPromise;
-
-function loadExcelJs() {
-  if (globalThis.ExcelJS) return Promise.resolve(globalThis.ExcelJS);
-  excelJsPromise ??= new Promise((resolve, reject) => {
-    const script = document.createElement("script"); script.src = EXCELJS_URL;
-    script.onload = () => globalThis.ExcelJS ? resolve(globalThis.ExcelJS) : reject(new Error("ExcelJS 載入失敗。"));
-    script.onerror = () => reject(new Error("無法載入 Excel 匯出元件，請確認網路連線後重試。")); document.head.append(script);
-  });
-  return excelJsPromise;
-}
+import { loadExcelJs } from "./exceljs-loader.js";
 
 const moneyFormat = "#,##0";
 const decimalFormat = "#,##0.##";
@@ -35,7 +24,7 @@ export async function buildProrationWorkbook(state, results, ExcelJS = globalThi
   row = writeProration(sheet, row, "房屋稅分算", results.house, houseTax, customer.buyer, shared.seller, style, mergeTitle);
 
   row += 1; mergeTitle(row, "地價稅計算依據"); row += 1;
-  for (const [label, value, format] of [["申報地價（元／㎡）", landTax.declaredLandValue, moneyFormat], ["土地面積（㎡）", landTax.area, decimalFormat], ["土地持分", `${landTax.shareNumerator} / ${landTax.shareDenominator}`], ["課稅地價", results.land.taxableLandValue, moneyFormat], ["地價稅率（%）", Number(landTax.rate), decimalFormat], ["完整地價稅", results.land.taxAmount, moneyFormat], ["課稅年度", landTax.taxYear], ["總課稅天數", results.land.totalTaxDays, moneyFormat]]) row = valueRow(row, label, value, format);
+  for (const [label, value, format] of [["申報地價（元／㎡）", landTax.declaredLandValue, moneyFormat], ["土地總面積（㎡）", landTax.area, decimalFormat], ["土地持分", `${landTax.shareNumerator} / ${landTax.shareDenominator}`], ["課稅地價", results.land.taxableLandValue, moneyFormat], ["地價稅率（%）", Number(landTax.rate), decimalFormat], ["完整地價稅", results.land.taxAmount, moneyFormat], ["課稅年度", landTax.taxYear], ["總課稅天數", results.land.totalTaxDays, moneyFormat]]) row = valueRow(row, label, value, format);
   row = writeProration(sheet, row, "地價稅分算", results.land, landTax, customer.buyer, shared.seller, style, mergeTitle);
 
   row += 1; mergeTitle(row, "最終找補"); row += 1; sheet.getCell(row, 1).value = results.total > 0 ? `${customer.buyer || "買方"}應補${shared.seller || "賣方"}` : results.total < 0 ? `${shared.seller || "賣方"}應補${customer.buyer || "買方"}` : "雙方無須找補"; sheet.mergeCells(row, 1, row, 4); sheet.getCell(row, 5).value = Math.abs(results.total); sheet.getCell(row, 5).numFmt = moneyFormat; style(row, row, true); row += 2;

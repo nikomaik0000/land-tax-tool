@@ -264,7 +264,48 @@ select:focus { border-color: #555555; }
 .proration-message { margin: 16px 0 0; color: var(--ui-text-secondary); font-size: 12px; line-height: 1.7; }
 input[aria-invalid="true"], select[aria-invalid="true"] { border-color: #555555; }
 
+/* Batch workspace uses existing controls and typography; all layout overrides
+   stay scoped here so single-case and report styles remain unchanged. */
+.proration-mode-switch .preview-actions { justify-content: flex-start; }
+#batchProrationWorkspace [hidden] { display: none !important; }
+#batchProrationWorkspace .field { min-width: 0; }
+#batchProrationWorkspace #batchCommonHeading { cursor: pointer; }
+#batchProrationWorkspace .batch-common-toggle { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer; text-align: left; }
+#batchProrationWorkspace .batch-common-toggle:focus-visible { outline: 1px solid #555555; outline-offset: 3px; }
+#batchProrationWorkspace .batch-common-toggle span { display: inline-block; transition: transform 0.15s ease; }
+#batchProrationWorkspace .batch-common-toggle[aria-expanded="true"] span { transform: rotate(90deg); }
+#batchProrationWorkspace .batch-common-actions { justify-content: flex-start; margin-bottom: 24px; }
+#batchProrationWorkspace #batchCommonBody[hidden] { display: none !important; }
+#batchProrationWorkspace .field small { color: var(--ui-text-secondary); font-size: 11px; font-weight: 400; line-height: 1.7; overflow-wrap: anywhere; }
+#batchProrationWorkspace .custom-notes-heading { margin-top: 28px; margin-bottom: 14px; }
+#batchProrationWorkspace .proration-batch-table { width: 100%; min-width: 960px; table-layout: fixed; }
+#batchProrationWorkspace .proration-batch-table th:first-child { width: 76px; }
+#batchProrationWorkspace .proration-batch-table th:last-child { width: 60px; }
+#batchProrationWorkspace .proration-batch-table th:nth-child(7) { width: 21%; }
+#batchProrationWorkspace .proration-batch-table td { white-space: normal; overflow-wrap: anywhere; line-height: 1.7; }
+#batchProrationWorkspace .proration-batch-table .check-option { margin: 0 auto; }
+#batchProrationWorkspace .proration-batch-table input[type="checkbox"] { width: 18px; height: 18px; border-color: #999999; }
+#batchProrationWorkspace .batch-row-errors { margin: 4px 0 0; padding-left: 16px; text-align: left; }
+#batchProrationWorkspace .proration-message { overflow-wrap: anywhere; }
+#batchEditorStatus { margin-bottom: 24px; }
+#batchUnmappedFields { display: grid; gap: 14px; margin-top: 24px; overflow-wrap: anywhere; }
+
+@media print {
+  .proration-mode-switch, #batchProrationWorkspace { display: none !important; }
+}
+
 @media (max-width: 720px) {
+  #batchProrationWorkspace .form-grid { grid-template-columns: minmax(0, 1fr); }
+  #batchProrationWorkspace .table-scroll { overflow: visible; }
+  #batchProrationWorkspace .proration-batch-table { display: block; min-width: 0; border: 0; }
+  #batchProrationWorkspace .proration-batch-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  #batchProrationWorkspace .proration-batch-table tbody { display: grid; gap: 14px; }
+  #batchProrationWorkspace .proration-batch-table tr { display: block; padding: 18px; border: 1px solid var(--ui-border); border-radius: 8px; }
+  #batchProrationWorkspace .proration-batch-table td { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 4px 12px; padding: 8px 0; border: 0; text-align: left; }
+  #batchProrationWorkspace .proration-batch-table td::before { content: attr(data-label); color: var(--ui-text-secondary); }
+  #batchProrationWorkspace .proration-batch-table td > small,
+  #batchProrationWorkspace .proration-batch-table td > ul { grid-column: 2; }
+  #batchProrationWorkspace .proration-batch-table .check-option { margin: 0; }
   .app-container { padding: 32px 20px 64px; }
   .form-grid { grid-template-columns: 1fr; }
   .proration-tax-grid { grid-template-columns: 1fr; }
