@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>案件文件產生器｜LAND TAX TOOL</title>
+  <link rel="icon" href="./icon/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon/apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="css/style.css?v=20260921-3">
+  <link rel="stylesheet" href="css/case-documents.css?v=20261019-8">
+</head>
+<body>
+  <main class="app-container case-document-app">
+    <header class="site-header">
+      <p class="eyebrow">LAND TAX TOOL</p>
+      <h1>案件文件產生器</h1>
+      <nav class="tool-nav" aria-label="功能切換">
+        <a href="index.html">增值稅試算</a>
+        <a href="proration.html">分算找補</a>
+        <a href="transcript.html">謄本整理</a>
+        <a href="land-value-update.html">公告現值更新</a>
+        <a href="land-number-converter.html">新舊地號查詢</a>
+        <a href="zoning.html">使用分區查詢</a>
+        <a class="is-active" href="case-documents.html" aria-current="page">案件文件</a>
+      </nav>
+    </header>
+
+    <section class="section" aria-labelledby="import-title">
+      <div class="section-heading">
+        <h2 id="import-title">匯入王代書案件資料</h2>
+        <p>可同時選擇土地與建物 CSV；檔案只在此瀏覽器記憶體中解析，不會上傳。</p>
+      </div>
+      <div id="caseCsvUploadZone" class="upload-zone compact-upload-zone">
+        <p class="upload-title">選擇土地／建物 CSV</p>
+        <p>支援王代書 Big5／CP950 匯出格式，可一次選擇多份。</p>
+        <label class="btn btn-primary file-picker" for="caseCsvFiles">選擇 CSV</label>
+        <input id="caseCsvFiles" class="visually-hidden" type="file" accept=".csv,text/csv,text/plain" multiple>
+      </div>
+      <div id="caseImportStatus" class="case-import-status" aria-live="polite">尚未匯入檔案。</div>
+      <div id="caseImportedFiles" class="case-imported-files" aria-label="目前案件已匯入檔案"></div>
+      <p id="caseImportedFileCount" class="case-imported-file-count">目前共 0 份唯一檔案。</p>
+    </section>
+
+    <section class="section" aria-labelledby="case-basic-title">
+      <div class="section-heading">
+        <h2 id="case-basic-title">案件基本資料</h2>
+        <p>無法由 CSV 確認的欄位可在此補填；正式資料卡維持空白，不輸出提示文字。</p>
+      </div>
+      <div class="case-basic-grid">
+        <label class="field"><span>區域</span><input id="caseDistrict" type="text" placeholder="待確認"></label>
+        <label class="field"><span>案件編號</span><input id="caseNumber" type="text" placeholder="CSV 未提供，請手動填寫"></label>
+        <label class="field"><span>登記原因</span><input id="registrationReason" type="text" placeholder="待確認"></label>
+        <label class="field"><span>原因日期</span><input id="reasonDate" type="text" placeholder="例如 114.12.05"></label>
+        <label class="field">
+          <span>案件類型</span>
+          <select id="caseType" class="form-select">
+            <option value="">請選擇（待確認）</option>
+            <option value="sale">買賣</option><option value="gift">贈與</option><option value="inheritance">繼承</option>
+            <option value="mortgage">設定</option><option value="cancellation">塗銷</option><option value="other">其他</option>
+          </select>
+        </label>
+        <label id="otherCaseTypeField" class="field" hidden><span>其他案件類型</span><input id="otherCaseType" type="text" placeholder="請自由填寫"></label>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="progress-title">
+      <div class="section-heading">
+        <h2 id="progress-title">稅務進度</h2>
+        <p>進度項目依案件類型切換；未填日期仍會在資料卡保留欄位。</p>
+      </div>
+      <div id="progressEditor" class="progress-editor"></div>
+    </section>
+
+    <section class="section" aria-labelledby="party-editor-title">
+      <div class="section-heading section-heading-inline">
+        <div><h2 id="party-editor-title">當事人</h2><p>買賣、贈與會依新舊權利人帶入稱謂；證號缺漏或衝突仍須人工確認。</p></div>
+        <button id="addCaseParty" class="btn btn-secondary" type="button">＋ 新增當事人</button>
+      </div>
+      <div class="party-display-options">
+        <label class="check-field"><input id="showPartyShare" type="checkbox" checked> 資料卡顯示當事人持分欄（買賣、贈與會依雙方人數自動設定）</label>
+        <label id="mortgagePartyOption" class="check-field" hidden><input id="sameDebtorObligor" type="checkbox"> 債務人與義務人為同一人</label>
+      </div>
+      <datalist id="partyRoleOptions"></datalist>
+      <div class="case-editor-scroll"><table class="case-editor-table party-editor-table">
+        <thead><tr><th>稱謂</th><th>姓名</th><th>生日</th><th>身分證統一編號</th><th>地址</th><th>持分</th><th>電話／備註</th><th>操作</th></tr></thead>
+        <tbody id="partyEditorRows"></tbody>
+      </table></div>
+      <p id="partyEditorEmpty" class="empty-state">尚無當事人資料。</p>
+    </section>
+
+    <section class="section" aria-labelledby="land-editor-title">
+      <div class="section-heading section-heading-inline">
+        <div><h2 id="land-editor-title">土地資料</h2><p>總現值保留 CSV 原始值，不會以未確認公式重新覆寫。</p></div>
+        <button id="addCaseLand" class="btn btn-secondary" type="button">＋ 新增土地</button>
+      </div>
+      <div class="case-editor-scroll"><table class="case-editor-table land-editor-table">
+        <thead><tr><th>段</th><th>小段</th><th>地號</th><th>面積</th><th>公告現值（元／㎡）</th><th>持分</th><th>總現值</th><th>前次移轉</th><th>操作</th></tr></thead>
+        <tbody id="landEditorRows"></tbody>
+      </table></div>
+      <p id="landEditorEmpty" class="empty-state">尚無土地資料。</p>
+    </section>
+
+    <section class="section" aria-labelledby="building-editor-title">
+      <div class="section-heading section-heading-inline">
+        <div><h2 id="building-editor-title">建物資料</h2><p>建材與總層數為資料卡共用欄位；附屬建物用途與面積在原始模型中分開保存。</p></div>
+        <button id="addCaseBuilding" class="btn btn-secondary" type="button">＋ 新增建物</button>
+      </div>
+      <div class="building-meta-grid">
+        <label class="field"><span>共用建材</span><input id="buildingMaterial" type="text" placeholder="待確認"></label>
+        <label class="field"><span>總層數</span><input id="buildingTotalFloors" type="text" inputmode="numeric" placeholder="CSV 未提供，請手動填寫"></label>
+      </div>
+      <div class="case-editor-scroll"><table class="case-editor-table building-editor-table">
+        <thead><tr><th>建號</th><th>門牌</th><th>層別</th><th>面積</th><th>持分</th><th>附屬建物</th><th>房屋現值</th><th>稅籍編號</th><th>操作</th></tr></thead>
+        <tbody id="buildingEditorRows"></tbody>
+      </table></div>
+      <p id="buildingEditorEmpty" class="empty-state">尚無建物資料。</p>
+
+      <div class="subsection-heading">
+        <div><h3>共有部分</h3><p>建號、面積、持分獨立保存；不同主建物的資料不會合併。</p></div>
+        <button id="addCommonPart" class="btn btn-secondary" type="button">＋ 新增共有部分</button>
+      </div>
+      <div class="case-editor-scroll"><table class="case-editor-table common-editor-table">
+        <thead><tr><th>建號</th><th>面積</th><th>持分</th><th>對應主建號（選填）</th><th>操作</th></tr></thead>
+        <tbody id="commonPartEditorRows"></tbody>
+      </table></div>
+      <p id="commonPartEditorEmpty" class="empty-state">尚無共有部分。</p>
+    </section>
+
+    <section class="section preview-section" aria-labelledby="case-preview-title">
+      <div class="section-heading section-heading-inline">
+        <div><h2 id="case-preview-title">A4 資料卡預覽</h2><p>依目前資料即時更新；列印時會使用 A4 直式並依內容自動分頁。</p></div>
+        <button id="printCaseCard" class="btn btn-primary" type="button">列印／另存 PDF</button>
+      </div>
+      <div class="report-preview case-card-preview">
+        <div id="caseCardViewport" class="a4-preview-viewport case-card-viewport">
+          <article id="caseCardSheet" class="a4-sheet orientation-portrait case-card-sheet" aria-label="案件資料卡預覽"></article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="caseCardPrintRoot" class="case-card-print-root" aria-hidden="true"></div>
+
+  <script src="js/case-documents-app.js?v=20261019-4" type="module"></script>
+</body>
+</html>
