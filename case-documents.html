@@ -7,8 +7,9 @@
   <link rel="icon" href="./icon/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="css/style.css?v=20260921-3">
-  <link rel="stylesheet" href="css/case-documents.css?v=20261019-8">
+  <link rel="stylesheet" href="css/style.css?v=20261022-1">
+  <link rel="stylesheet" href="css/case-documents.css?v=20261021-2">
+  <link rel="stylesheet" href="css/case-document-authorizations.css?v=20261021-2">
 </head>
 <body>
   <main class="app-container case-document-app">
@@ -42,6 +43,14 @@
       <p id="caseImportedFileCount" class="case-imported-file-count">目前共 0 份唯一檔案。</p>
     </section>
 
+    <nav class="case-document-tabs" role="tablist" aria-label="案件文件子分頁">
+      <button id="caseTabCard" class="case-document-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="casePanelCard" data-case-tab="card">案件資料卡</button>
+      <button id="caseTabHouse" class="case-document-tab" type="button" role="tab" aria-selected="false" aria-controls="casePanelHouse" data-case-tab="house">房屋稅籍</button>
+      <button id="caseTabReal" class="case-document-tab" type="button" role="tab" aria-selected="false" aria-controls="casePanelReal" data-case-tab="real">實價登錄</button>
+    </nav>
+
+    <div id="authorizationWorkspace" class="case-document-workspace">
+      <div id="casePanelCard" class="case-document-tab-panel" role="tabpanel" aria-labelledby="caseTabCard" data-case-tab-panel="card">
     <section class="section" aria-labelledby="case-basic-title">
       <div class="section-heading">
         <h2 id="case-basic-title">案件基本資料</h2>
@@ -127,6 +136,150 @@
       <p id="commonPartEditorEmpty" class="empty-state">尚無共有部分。</p>
     </section>
 
+      </div>
+
+      <details class="shared-workspace-tool">
+        <summary>常用代理人管理</summary>
+        <div class="shared-workspace-tool-content">
+      <section class="section" aria-label="常用代理人管理">
+        <p class="shared-workspace-description">名單只保存在這台裝置的瀏覽器，不會上傳外部服務。兩份委託書可各自選擇不同代理人，也可改用臨時輸入。</p>
+        <form id="agentForm" class="agent-editor-grid">
+          <label class="field"><span>姓名</span><input id="agentName" type="text" autocomplete="off" required></label>
+          <label class="field"><span>身分證統一編號</span><input id="agentIdNumber" type="text" autocomplete="off"></label>
+          <label class="field"><span>電話</span><input id="agentPhone" type="tel" autocomplete="off"></label>
+          <label class="field"><span>通訊地址</span><input id="agentAddress" type="text" autocomplete="off"></label>
+          <div class="agent-editor-actions"><button id="agentSubmit" class="btn btn-primary" type="submit">新增代理人</button><button id="agentCancel" class="btn btn-secondary" type="button" hidden>取消編輯</button></div>
+        </form>
+        <div id="agentList" class="agent-list"></div>
+        <p id="agentEmpty" class="authorization-empty">尚未建立常用代理人。</p>
+      </section>
+        </div>
+      </details>
+
+      <details class="shared-workspace-tool shared-field-mapping">
+        <summary>共用案件資料欄位對照</summary>
+        <div class="shared-workspace-tool-content">
+      <section class="section" aria-label="共用案件資料欄位對照">
+        <p class="shared-workspace-description">只讀取既有王代書 CSV 解析結果與案件模型；缺漏或不唯一的資料不推測，改由下方文件設定手動補填。</p>
+        <div class="authorization-table-scroll"><table class="field-mapping-table">
+          <thead><tr><th>文件欄位</th><th>案件模型來源</th><th>目前值</th></tr></thead>
+          <tbody id="sharedFieldMappingRows"></tbody>
+        </table></div>
+      </section>
+        </div>
+      </details>
+
+      <div id="casePanelHouse" class="case-document-tab-panel" role="tabpanel" aria-labelledby="caseTabHouse" data-case-tab-panel="house" hidden>
+      <section class="section authorization-document" aria-labelledby="house-tax-title">
+        <div class="section-heading">
+          <h2 id="house-tax-title">房屋稅籍查詢委任書設定</h2>
+          <p>委任人候選名單只包含案件義務人，其他當事人不會列入；正式 PDF 以政府原始書表為固定底稿。</p>
+        </div>
+        <div class="authorization-grid">
+          <div class="authorization-panel">
+            <h3>委任人與申請建物</h3>
+            <label class="field"><span>委任人（單選）</span><select id="houseTaxPrincipal" class="form-select"></select></label>
+            <div id="houseTaxPrincipalSummary" class="authorization-summary"></div>
+            <fieldset class="authorization-fieldset"><legend>申請建物（可複選）</legend><div id="houseTaxBuildings" class="authorization-check-list"></div></fieldset>
+          </div>
+          <div class="authorization-panel">
+            <h3>代理人</h3>
+            <label class="field"><span>輸入方式</span><select id="houseTaxAgentMode" class="form-select"><option value="saved">常用代理人</option><option value="manual">臨時手動輸入</option></select></label>
+            <label class="field"><span>常用代理人</span><select id="houseTaxAgent" class="form-select"></select></label>
+            <div id="houseTaxManualAgent" class="manual-agent-grid" hidden>
+              <label class="field"><span>姓名</span><input data-agent-field="name" type="text"></label>
+              <label class="field"><span>證號</span><input data-agent-field="idNumber" type="text"></label>
+              <label class="field"><span>電話</span><input data-agent-field="phone" type="tel"></label>
+              <label class="field"><span>通訊地址</span><input data-agent-field="address" type="text"></label>
+            </div>
+            <div id="houseTaxAgentSummary" class="authorization-summary"></div>
+          </div>
+        </div>
+        <div class="authorization-form-grid">
+          <label class="authorization-check-row authorization-fixed-option"><input id="houseTaxCertificate" type="checkbox" checked><span><strong>房屋稅稅籍證明</strong><small>預設申請項目；房屋坐落套印於此項目下方的官方空白位置。</small></span></label>
+        </div>
+        <p class="signature-note">稅務局與日期保留空白供列印後手寫；套印保留委任人、代理人簽章與政府機關填寫空間。</p>
+        <div id="houseTaxWarnings" class="authorization-warnings" aria-live="polite"></div>
+        <div id="houseTaxDataPreview" class="document-data-preview" aria-label="房屋稅籍查詢委任書填寫資料預覽" aria-live="polite"></div>
+        <section class="official-pdf-section" aria-labelledby="house-tax-official-title">
+          <div class="official-pdf-heading">
+            <div><span>正式政府原表</span><h3 id="house-tax-official-title">房屋稅籍查詢委任書 PDF 預覽</h3></div>
+            <div class="official-pdf-actions">
+              <button id="downloadHouseTaxPdf" class="btn btn-secondary" type="button" disabled>下載 PDF</button>
+              <button id="printHouseTaxPdf" class="btn btn-primary" type="button" disabled>列印 PDF</button>
+            </div>
+          </div>
+          <p id="houseTaxOfficialStatus" class="official-pdf-status" data-state="waiting" aria-live="polite">選擇委任人與一筆建物後，即可產生正式政府原表預覽。</p>
+          <div class="official-pdf-frame">
+            <p id="houseTaxOfficialPlaceholder" class="official-pdf-placeholder">尚無可預覽的正式 PDF。</p>
+            <iframe id="houseTaxOfficialPreview" title="房屋稅籍查詢委任書正式 PDF 預覽" hidden></iframe>
+          </div>
+          <p class="official-pdf-footnote">預覽、下載與列印共用同一份瀏覽器端產生的 PDF；資料不會上傳外部服務。</p>
+        </section>
+      </section>
+      </div>
+
+      <div id="casePanelReal" class="case-document-tab-panel" role="tabpanel" aria-labelledby="caseTabReal" data-case-tab-panel="real" hidden>
+      <section class="section authorization-document" aria-labelledby="real-price-title">
+        <div class="section-heading">
+          <h2 id="real-price-title">實價登錄委託書設定</h2>
+          <p>自動列入全部適用的權利人與義務人；同一角色依證號去重，證號缺漏時不以姓名臆測合併。</p>
+        </div>
+        <div class="authorization-panel">
+          <div class="authorization-subheading"><h3>全體委託人</h3><span id="realPriceLayoutRule" class="layout-rule-badge"></span></div>
+          <div id="realPriceEntrustors" class="entrustor-list"></div>
+        </div>
+        <div class="authorization-grid authorization-grid-spaced">
+          <div class="authorization-panel">
+            <h3>受託人</h3>
+            <label class="field"><span>輸入方式</span><select id="realPriceAgentMode" class="form-select"><option value="saved">常用代理人</option><option value="manual">臨時手動輸入</option></select></label>
+            <label class="field"><span>常用代理人</span><select id="realPriceAgent" class="form-select"></select></label>
+            <div id="realPriceManualAgent" class="manual-agent-grid" hidden>
+              <label class="field"><span>姓名</span><input data-agent-field="name" type="text"></label>
+              <label class="field"><span>證號</span><input data-agent-field="idNumber" type="text"></label>
+              <label class="field"><span>電話</span><input data-agent-field="phone" type="tel"></label>
+              <label class="field"><span>通訊地址</span><input data-agent-field="address" type="text"></label>
+            </div>
+            <div id="realPriceAgentSummary" class="authorization-summary"></div>
+          </div>
+          <div class="authorization-panel">
+            <h3>不動產標的</h3>
+            <div class="authorization-form-grid compact">
+              <label class="field"><span>縣市</span><input id="realPriceCity" type="text" placeholder="待確認"></label>
+              <label class="field"><span>行政區</span><input id="realPriceDistrict" type="text" placeholder="待確認"></label>
+              <label class="field field-wide"><span>土地與建物標示</span><textarea id="realPriceProperty" placeholder="由案件土地與建物組合；可手動修改"></textarea></label>
+              <div class="property-font-controls">
+                <label class="field"><span>不動產標的字級模式</span><select id="realPricePropertyFontMode" class="form-select"><option value="auto">自動調整（12～9pt）</option><option value="manual">手動指定</option></select></label>
+                <label id="realPricePropertyFontSizeField" class="field is-disabled"><span>手動字級</span><select id="realPricePropertyFontSize" class="form-select" disabled><option value="9">9pt</option><option value="9.5">9.5pt</option><option value="10">10pt</option><option value="10.5">10.5pt</option><option value="11">11pt</option><option value="11.5">11.5pt</option><option value="12" selected>12pt</option><option value="12.5">12.5pt</option><option value="13">13pt</option></select></label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="authorization-form-grid authorization-grid-spaced">
+          <label class="field"><span>委託事項</span><select id="realPriceMatter" class="form-select"><option value="申報登錄資訊">申報登錄資訊</option><option value="">全部不勾</option></select></label>
+        </div>
+        <p class="signature-note">電話、更正期間與日期在正式 PDF 保留空白供手寫；多人案件依官方原版使用附表。</p>
+        <div id="realPriceWarnings" class="authorization-warnings" aria-live="polite"></div>
+        <div id="realPriceDataPreview" class="document-data-preview" aria-label="實價登錄委託書填寫資料預覽" aria-live="polite"></div>
+        <section class="official-pdf-section" aria-labelledby="real-price-official-title">
+          <div class="official-pdf-heading">
+            <div><span>正式政府原表</span><h3 id="real-price-official-title">實價登錄委託書 PDF 預覽</h3></div>
+            <div class="official-pdf-actions">
+              <button id="downloadRealPricePdf" class="btn btn-secondary" type="button" disabled>下載 PDF</button>
+              <button id="printRealPricePdf" class="btn btn-primary" type="button" disabled>列印 PDF</button>
+            </div>
+          </div>
+          <p id="realPriceOfficialStatus" class="official-pdf-status" data-state="loading" aria-live="polite">正在產生正式政府原表預覽。</p>
+          <div class="official-pdf-frame">
+            <p id="realPriceOfficialPlaceholder" class="official-pdf-placeholder">正在準備正式 PDF。</p>
+            <iframe id="realPriceOfficialPreview" title="實價登錄委託書正式 PDF 預覽" hidden></iframe>
+          </div>
+          <p class="official-pdf-footnote">預覽、下載與列印共用同一份瀏覽器端產生的 PDF；資料不會上傳外部服務。3 人以上依官方格式加入附表。</p>
+        </section>
+      </section>
+    </div>
+
+    <div class="case-document-tab-panel" role="tabpanel" aria-labelledby="caseTabCard" data-case-tab-panel="card">
     <section class="section preview-section" aria-labelledby="case-preview-title">
       <div class="section-heading section-heading-inline">
         <div><h2 id="case-preview-title">A4 資料卡預覽</h2><p>依目前資料即時更新；列印時會使用 A4 直式並依內容自動分頁。</p></div>
@@ -138,10 +291,14 @@
         </div>
       </div>
     </section>
+    </div>
+    </div>
   </main>
 
   <div id="caseCardPrintRoot" class="case-card-print-root" aria-hidden="true"></div>
 
-  <script src="js/case-documents-app.js?v=20261019-4" type="module"></script>
+  <script src="vendor/pdf/pdf-lib.min.js?v=1.17.1"></script>
+  <script src="vendor/pdf/fontkit.umd.min.js?v=1.1.1"></script>
+  <script src="js/case-documents-app.js?v=20261021-1" type="module"></script>
 </body>
 </html>

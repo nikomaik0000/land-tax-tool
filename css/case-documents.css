@@ -1,4 +1,3 @@
-.case-document-app { max-width: 1240px; }
 .case-document-app [hidden] { display: none !important; }
 .compact-upload-zone { padding-block: 32px; }
 .case-import-status { display: grid; gap: 6px; margin-top: 16px; color: var(--ui-text-secondary); font-size: 12px; line-height: 1.7; }
@@ -23,24 +22,31 @@
 .progress-editor-item { display: grid; grid-template-columns: minmax(72px, auto) minmax(0, 1fr); align-items: center; gap: 10px; min-height: 62px; margin: 0 -1px -1px 0; padding: 10px 12px; border-right: 1px solid var(--ui-border); border-bottom: 1px solid var(--ui-border); color: #333333; font-size: 12px; }
 .progress-editor-item input { height: 38px; min-width: 0; padding-inline: 9px; font-size: 12px; }
 .progress-editor-item .progress-label-input { width: 100%; border-color: transparent; background: var(--ui-surface); }
-.case-editor-scroll { overflow-x: auto; padding-bottom: 8px; }
-.case-editor-table { width: max-content; min-width: 100%; border-collapse: collapse; border: 1px solid var(--ui-border-strong); font-size: 11px; }
+.case-editor-scroll { max-width: 100%; overflow-x: auto; padding-bottom: 8px; }
+.case-editor-table { width: 100%; min-width: 0; table-layout: auto; border-collapse: collapse; border: 1px solid var(--ui-border-strong); font-size: 11px; }
 .case-editor-table th,
 .case-editor-table td { border: 1px solid var(--ui-border); vertical-align: middle; }
 .case-editor-table th { padding: 9px 7px; background: var(--ui-surface); font-weight: 500; text-align: center; white-space: nowrap; }
-.case-editor-table td { min-width: 92px; padding: 4px; }
-.case-editor-table td.wide-editor-cell { min-width: 260px; }
-.case-editor-table td:last-child { min-width: 54px; text-align: center; }
-.case-editor-table input { min-width: 88px; height: 36px; padding: 0 7px; border-color: transparent; border-radius: 3px; background: transparent; font-size: 11px; }
-.case-editor-table input:focus { border-color: #777777; background: #ffffff; }
+.case-editor-table td { min-width: 0; padding: 4px; }
+.case-editor-table td.wide-editor-cell { width: 28%; min-width: 150px; }
+.case-editor-table td:last-child { width: 1%; min-width: 54px; text-align: center; white-space: nowrap; }
+.case-editor-table input,
+.case-editor-table textarea { width: 100%; min-width: 0; border-color: transparent; border-radius: 3px; background: transparent; font-size: 11px; }
+.case-editor-table input { height: 36px; padding: 0 7px; }
+.case-editor-table textarea { min-height: 42px; height: auto; max-height: none; padding: 7px; overflow-y: hidden; resize: vertical; field-sizing: content; line-height: 1.45; }
+.case-editor-table input:focus,
+.case-editor-table textarea:focus { border-color: #777777; background: #ffffff; }
 .record-warning { display: block; padding: 3px 7px 5px; color: var(--ui-text-secondary); font-size: 9px; line-height: 1.4; }
-.land-editor-table { min-width: 1220px; }
-.party-editor-table { min-width: 1540px; }
-.party-editor-table th:nth-child(5),
-.party-editor-table td:nth-child(5) { min-width: 300px; }
-.building-editor-table { min-width: 1420px; }
-.common-editor-table { min-width: 700px; }
-.compact-share-editor { display: grid; grid-template-columns: 64px auto 72px; align-items: center; gap: 2px; }
+.party-editor-table th:nth-child(4),
+.party-editor-table td:nth-child(4),
+.land-editor-table td:nth-child(n + 3):nth-child(-n + 7),
+.building-editor-table td:nth-child(1),
+.building-editor-table td:nth-child(n + 3),
+.common-editor-table td:nth-child(-n + 3) { white-space: nowrap; }
+.land-editor-table td:nth-child(8) { width: 18%; }
+.building-editor-table td:nth-child(2) { width: 30%; }
+.common-editor-table td:nth-child(4) { width: 24%; }
+.compact-share-editor { display: grid; min-width: 106px; grid-template-columns: minmax(42px, 1fr) auto minmax(48px, 1fr); align-items: center; gap: 2px; white-space: nowrap; }
 .compact-share-editor input { width: 100%; min-width: 0; text-align: center; }
 .subsection-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-top: 36px; padding-bottom: 14px; border-bottom: 1px solid var(--ui-border); }
 .subsection-heading h3 { margin: 0; font-size: 14px; font-weight: 600; }
@@ -176,4 +182,8 @@
   .section-heading-inline .btn,
   .subsection-heading .btn { width: fit-content; }
   .case-card-preview { padding: 20px 12px; }
+  .party-editor-table { min-width: 980px; }
+  .land-editor-table { min-width: 900px; }
+  .building-editor-table { min-width: 1020px; }
+  .common-editor-table { min-width: 650px; }
 }

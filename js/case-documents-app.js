@@ -21,8 +21,12 @@ import {
   removeImportedFile,
 } from "./case-documents-import.js";
 import { preparePrintableCaseCard } from "./case-documents-print.js";
+import { mountCaseAuthorizationWorkspace } from "./case-document-authorizations-app.js";
+import { mountCaseDocumentTabs } from "./case-document-tabs.js";
 
 const state = createCaseDocumentState();
+mountCaseDocumentTabs();
+const authorizationWorkspace = mountCaseAuthorizationWorkspace(state);
 const elements = {
   fileInput: document.querySelector("#caseCsvFiles"),
   uploadZone: document.querySelector("#caseCsvUploadZone"),
@@ -259,6 +263,7 @@ function bindCollectionEditor(container, collectionName, rerender) {
       reconcilePartyShareVisibility(state);
       elements.showPartyShare.checked = state.partySettings.showShare;
     }
+    if (input instanceof HTMLTextAreaElement) resizeEditorTextarea(input);
     renderPreview();
   });
   container.addEventListener("focusout", (event) => {
@@ -307,11 +312,12 @@ function renderPartyEditor() {
     <td>${editorInput(item, "name")}${partyImportWarning(item)}</td>
     <td>${editorInput(item, "birthDate", "例如 75.03.12")}</td>
     <td>${editorInput(item, "idNumber")}</td>
-    <td class="wide-editor-cell">${editorInput(item, "address")}</td>
+    <td class="wide-editor-cell">${editorTextarea(item, "address")}</td>
     <td>${editorInput(item, "share", "例如 土：1/2　建：1/2000")}</td>
     <td>${editorInput(item, "phoneNote")}</td>
     <td><button class="text-button" type="button" data-remove-id="${item.id}">刪除</button></td>
   </tr>`).join("");
+  resizeEditorTextareas(elements.partyRows);
 }
 
 function partyImportWarning(item) {
@@ -356,13 +362,14 @@ function renderLandEditor() {
 function renderBuildingEditor() {
   elements.buildingEmpty.hidden = state.buildings.length > 0;
   elements.buildingRows.innerHTML = state.buildings.map((item) => `<tr>
-    <td>${editorInput(item, "buildingNumber")}</td><td class="wide-editor-cell">${editorInput(item, "address")}${item.detailMappingNeedsConfirmation ? '<small class="record-warning">建物／附屬列對應待確認</small>' : ""}</td>
+    <td>${editorInput(item, "buildingNumber")}</td><td class="wide-editor-cell">${editorTextarea(item, "address")}${item.detailMappingNeedsConfirmation ? '<small class="record-warning">建物／附屬列對應待確認</small>' : ""}</td>
     <td>${editorInput(item, "floor")}</td><td>${editorInput(item, "area", "", "decimal")}</td>
     <td>${shareEditor(item)}</td><td>${editorInput(item, "accessoryText", item.detailMappingNeedsConfirmation ? "待確認" : "")}</td>
     <td>${editorInput(item, "currentValue", "待確認", "numeric")}</td>
     <td>${editorInput(item, "taxNumber", "待確認")}</td>
     <td><button class="text-button" type="button" data-remove-id="${item.id}">刪除</button></td>
   </tr>`).join("");
+  resizeEditorTextareas(elements.buildingRows);
 }
 
 function renderCommonPartEditor() {
@@ -376,6 +383,19 @@ function renderCommonPartEditor() {
 
 function editorInput(item, field, placeholder = "", inputMode = "text", list = "") {
   return `<input data-record-id="${item.id}" data-field="${field}" type="text" inputmode="${inputMode}" value="${escapeAttribute(item[field])}" placeholder="${escapeAttribute(placeholder)}"${list ? ` list="${list}"` : ""}>`;
+}
+
+function editorTextarea(item, field, placeholder = "") {
+  return `<textarea data-record-id="${item.id}" data-field="${field}" rows="2" placeholder="${escapeAttribute(placeholder)}">${escapeHtml(item[field])}</textarea>`;
+}
+
+function resizeEditorTextareas(container) {
+  container?.querySelectorAll("textarea").forEach(resizeEditorTextarea);
+}
+
+function resizeEditorTextarea(textarea) {
+  textarea.style.height = "auto";
+  textarea.style.height = `${Math.max(42, textarea.scrollHeight)}px`;
 }
 
 function shareEditor(item) {
@@ -431,6 +451,7 @@ function syncBuildingMetaInputs() {
 
 function renderPreview() {
   elements.sheet.innerHTML = renderCaseCard(state);
+  authorizationWorkspace.render();
   requestAnimationFrame(scalePreview);
 }
 
