@@ -7,7 +7,8 @@ const PAGE_LABELS = {
   transcript: "謄本整理",
   "land-value-update": "公告現值更新",
   "land-number-converter": "新舊地號查詢",
-  zoning: "使用分區查詢"
+  zoning: "使用分區查詢",
+  "case-documents": "案件文件產生器",
 };
 
 export function buildCaseFile(pageType, data, savedAt = new Date().toISOString()) {
@@ -59,12 +60,15 @@ export async function readCaseFile(file, expectedPageType) {
   return parseCaseFile(await file.text(), expectedPageType);
 }
 
-export function setupCaseFileActions({ pageType, label, saveButton, importButton, serialize, restore, hasData, caseName, onError = (message) => window.alert(message) }) {
+export function setupCaseFileActions({ pageType, label, saveButton, importButton, serialize, restore, hasData, caseName, onSaved = () => {}, onRestored = () => {}, onError = (message) => window.alert(message) }) {
   const input = document.createElement("input");
   input.type = "file"; input.accept = ".json,application/json"; input.className = "visually-hidden";
   document.body.append(input);
   saveButton?.addEventListener("click", () => {
-    try { downloadCaseFile(buildCaseFile(pageType, serialize()), caseFilename(label, caseName?.())); }
+    try {
+      downloadCaseFile(buildCaseFile(pageType, serialize()), caseFilename(label, caseName?.()));
+      onSaved();
+    }
     catch (error) { onError(error?.message || "案件檔無法儲存。"); }
   });
   importButton?.addEventListener("click", () => { input.value = ""; input.click(); });
@@ -73,6 +77,7 @@ export function setupCaseFileActions({ pageType, label, saveButton, importButton
       const loaded = await readCaseFile(input.files?.[0], pageType);
       if (hasData?.() && !window.confirm("導入案件會取代目前頁面資料，是否繼續？")) return;
       await restore(loaded.data);
+      onRestored(loaded);
     } catch (error) { onError(error?.message || "案件檔格式錯誤，無法導入。"); }
   });
   return input;

@@ -1,0 +1,357 @@
+.real-price-mode-tabs {
+  display: inline-flex;
+  gap: 0;
+  margin: 0 0 16px;
+  padding: 4px;
+  border: 1px solid var(--border-color, #d8d8d8);
+  border-radius: 10px;
+  background: #f2f2f2;
+}
+
+.real-price-mode-tab {
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 7px;
+  color: #555;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.real-price-mode-tab.is-active {
+  color: #fff;
+  background: #111;
+}
+
+.filing-hero,
+.filing-section {
+  margin-bottom: 16px;
+}
+
+.filing-kicker,
+.filing-step {
+  display: block;
+  margin: 0 0 5px;
+  color: #777;
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.candidate-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 280px;
+  padding: 8px 12px;
+  border: 1px solid #111;
+  border-radius: 999px;
+  color: #111;
+  background: #fff;
+  font-size: .78rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.filing-draft-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid #d8d8d8;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.filing-draft-bar div {
+  display: grid;
+  gap: 3px;
+}
+
+.filing-draft-bar span,
+.filing-code-source,
+.filing-derived {
+  color: #666;
+  font-size: .82rem;
+}
+
+.filing-local-warning,
+.filing-code-error,
+.candidate-disclaimer {
+  margin: 12px 0 0;
+  padding: 11px 13px;
+  border-left: 3px solid #777;
+  color: #4a4a4a;
+  background: #f5f5f5;
+  font-size: .84rem;
+  line-height: 1.65;
+}
+
+.filing-code-error {
+  border-color: #a40000;
+  color: #7a0000;
+  background: #fff3f3;
+}
+
+.filing-code-source { margin: 10px 0 0; }
+
+.filing-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.filing-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.filing-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.filing-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.filing-grid .field-wide { grid-column: 1 / -1; }
+
+.filing-grid .field small {
+  color: #777;
+  line-height: 1.45;
+}
+
+.filing-party-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.filing-party-columns > div > h3,
+.filing-subsection h3 {
+  margin: 0 0 10px;
+  font-size: .95rem;
+}
+
+.filing-person-card,
+.filing-list-item,
+.filing-conditional-list {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid #dedede;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.filing-person-card > strong { display: block; margin-bottom: 12px; }
+.filing-subsection { margin-top: 18px; }
+.filing-toggle { margin-bottom: 16px; font-weight: 800; }
+.compact-field { max-width: 360px; }
+
+.filing-note-block {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid #d8d8d8;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.filing-note-heading,
+.filing-advanced-entry,
+.filing-advanced-dialog-heading,
+.filing-advanced-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.filing-note-heading h3,
+.filing-note-heading p,
+.filing-advanced-entry p,
+.filing-advanced-dialog-heading h3 { margin: 0; }
+.filing-note-heading p,
+.filing-advanced-entry p { margin-top: 3px; color: #666; font-size: .82rem; }
+.filing-note-count { color: #666; font-size: .82rem; white-space: nowrap; }
+
+.filing-note-options {
+  display: grid;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.filing-note-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  line-height: 1.45;
+  white-space: normal;
+  cursor: pointer;
+}
+
+.filing-note-options input[type="radio"] {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.filing-note-custom { margin-top: 14px; }
+
+.filing-advanced-entry {
+  align-items: flex-start;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #ddd;
+}
+
+.filing-advanced-button { flex: 0 0 auto; }
+
+.filing-advanced-dialog {
+  width: min(960px, calc(100vw - 32px));
+  max-height: min(820px, calc(100vh - 32px));
+  padding: 0;
+  border: 1px solid #aaa;
+  border-radius: 14px;
+  color: #111;
+  background: #fff;
+  box-shadow: 0 22px 70px rgb(0 0 0 / 28%);
+}
+
+.filing-advanced-dialog::backdrop { background: rgb(0 0 0 / 45%); }
+.filing-advanced-dialog-heading { padding: 18px 20px; border-bottom: 1px solid #ddd; }
+.filing-advanced-dialog-heading span { color: #777; font-size: .75rem; font-weight: 800; letter-spacing: .08em; }
+.filing-advanced-dialog > .filing-local-warning { margin: 16px 20px 0; }
+
+.filing-advanced-body {
+  display: grid;
+  gap: 22px;
+  max-height: calc(100vh - 250px);
+  padding: 20px;
+  overflow: auto;
+}
+
+.filing-advanced-body > section + section { padding-top: 20px; border-top: 1px solid #ddd; }
+.filing-advanced-body h4 { margin: 0 0 12px; }
+.filing-advanced-dialog-actions { justify-content: flex-end; padding: 14px 20px; border-top: 1px solid #ddd; }
+
+.filing-section details {
+  margin-top: 14px;
+  border: 1px solid #d8d8d8;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.filing-section summary {
+  padding: 14px 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.filing-section details > :not(summary) { margin-right: 16px; margin-left: 16px; }
+.filing-section details > :last-child { margin-bottom: 16px; }
+
+.filing-option-list,
+.filing-item-list {
+  display: grid;
+  gap: 10px;
+}
+
+.filing-option-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(170px, .7fr) minmax(170px, .7fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.filing-option-row input:not([type="checkbox"]) {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #cfcfcf;
+  border-radius: 7px;
+  font: inherit;
+}
+
+.filing-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 14px;
+}
+
+.filing-list-heading,
+.filing-list-actions,
+.filing-download-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.filing-list-actions { justify-content: flex-start; }
+.filing-download-actions { justify-content: flex-end; }
+
+.filing-empty {
+  padding: 14px;
+  border: 1px dashed #c9c9c9;
+  color: #777;
+  text-align: center;
+}
+
+.filing-validation {
+  padding: 14px 16px;
+  border: 1px solid #d8d8d8;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.filing-validation p { margin: 4px 0 0; color: #666; }
+.filing-validation.has-errors { border-color: #b85d5d; background: #fff5f5; }
+.filing-validation.has-warnings { border-color: #c6a653; background: #fffbea; }
+.filing-validation ul { margin: 10px 0 0; padding-left: 20px; }
+
+.filing-validation button {
+  padding: 2px 0;
+  border: 0;
+  color: #851919;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.filing-validation .is-warning button { color: #67520d; }
+.filing-inference-warning { color: #765d0a !important; }
+
+.filing-json-preview {
+  max-height: 520px;
+  overflow: auto;
+  padding: 14px;
+  border-radius: 8px;
+  color: #e9e9e9;
+  background: #171717;
+  font: .76rem/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre;
+}
+
+@media (max-width: 900px) {
+  .filing-grid.three,
+  .filing-grid.four,
+  .filing-checkbox-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filing-party-columns { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .real-price-mode-tabs { display: flex; width: 100%; }
+  .real-price-mode-tab { flex: 1; padding-inline: 8px; }
+  .filing-draft-bar { align-items: stretch; flex-direction: column; }
+  .filing-grid.two,
+  .filing-grid.three,
+  .filing-grid.four,
+  .filing-checkbox-grid,
+  .filing-option-row { grid-template-columns: 1fr; }
+  .filing-download-actions { align-items: stretch; flex-direction: column; }
+  .filing-note-heading,
+  .filing-advanced-entry { align-items: stretch; flex-direction: column; }
+  .filing-advanced-button { align-self: flex-start; }
+}

@@ -1,4 +1,5 @@
 import {
+  addAuthorizationAgentSnapshots,
   buildHouseTaxPreviewData,
   buildRealPricePreviewData,
   createAuthorizationDocumentState,
@@ -7,16 +8,18 @@ import {
   loadAgents,
   removeAgent,
   resolveDocumentAgent,
+  restoreAuthorizationAgentSnapshots,
   saveAgents,
   syncAuthorizationDefaults,
   upsertAgent,
 } from "./case-document-authorizations.js";
 import { createHouseTaxPdfController } from "./house-tax-pdf-app.js";
 import { createRealPricePdfController } from "./real-price-pdf-app.js";
+import { mountRealPriceFilingWorkspace } from "./real-price-filing-app.js";
 
-export function mountCaseAuthorizationWorkspace(caseState, doc = document, storage = globalThis.localStorage) {
+export function mountCaseAuthorizationWorkspace(caseState, doc = document, storage = globalThis.localStorage, { onCaseChange = () => {} } = {}) {
   const root = doc.querySelector("#authorizationWorkspace");
-  if (!root) return { render() {} };
+  if (!root) return { render() {}, getCaseData: () => null, restoreCaseData() {}, clearCaseData() {} };
 
   const documents = createAuthorizationDocumentState();
   let agents = loadAgents(storage);
@@ -36,13 +39,35 @@ export function mountCaseAuthorizationWorkspace(caseState, doc = document, stora
     download: elements.realDownload,
     print: elements.realPrint,
   }, doc.defaultView || globalThis);
+  const realPriceFiling = mountRealPriceFilingWorkspace({
+    caseState,
+    getAgents: () => agents.map((item) => ({ ...item })),
+    storage,
+    doc,
+    onChange: onCaseChange,
+  });
 
   bindAgentManager();
   bindHouseTaxEditor();
   bindRealPriceEditor();
   render();
 
-  return { render, documents, getAgents: () => agents.map((item) => ({ ...item })) };
+  return {
+    render,
+    documents,
+    getAgents: () => agents.map((item) => ({ ...item })),
+    getCaseData: () => ({ authorizationDocuments: addAuthorizationAgentSnapshots(documents, agents), realPriceFiling: realPriceFiling.getDraft() }),
+    restoreCaseData(value = {}) {
+      replaceObject(documents, restoreAuthorizationAgentSnapshots(value.authorizationDocuments, agents));
+      realPriceFiling.replaceDraft(value.realPriceFiling);
+      render();
+    },
+    clearCaseData() {
+      replaceObject(documents, createAuthorizationDocumentState());
+      realPriceFiling.clearCurrentDraft();
+      render();
+    },
+  };
 
   function render() {
     const map = syncAuthorizationDefaults(caseState, documents);
@@ -51,6 +76,7 @@ export function mountCaseAuthorizationWorkspace(caseState, doc = document, stora
     renderHouseTax(map);
     renderRealPrice(map);
     renderSharedMapping(map);
+    realPriceFiling.render();
   }
 
   function bindAgentManager() {
@@ -61,6 +87,7 @@ export function mountCaseAuthorizationWorkspace(caseState, doc = document, stora
         name: elements.agentName.value,
         idNumber: elements.agentIdNumber.value,
         phone: elements.agentPhone.value,
+        email: elements.agentEmail.value,
         address: elements.agentAddress.value,
       };
       if (!input.name.trim()) {
@@ -83,6 +110,7 @@ export function mountCaseAuthorizationWorkspace(caseState, doc = document, stora
         elements.agentName.value = agent.name;
         elements.agentIdNumber.value = agent.idNumber;
         elements.agentPhone.value = agent.phone;
+        elements.agentEmail.value = agent.email;
         elements.agentAddress.value = agent.address;
         elements.agentSubmit.textContent = "儲存修改";
         elements.agentCancel.hidden = false;
@@ -186,7 +214,7 @@ export function mountCaseAuthorizationWorkspace(caseState, doc = document, stora
   function renderAgentList() {
     elements.agentEmpty.hidden = agents.length > 0;
     elements.agentList.innerHTML = agents.map((agent) => `<article class="agent-card">
-      <div><strong>${escapeHtml(agent.name)}</strong><span>${escapeHtml(agent.idNumber || "證號未填")}｜${escapeHtml(agent.phone || "電話未填")}</span><small>${escapeHtml(agent.address || "通訊地址未填")}</small></div>
+      <div><strong>${escapeHtml(agent.name)}</strong><span>${escapeHtml(agent.idNumber || "證號未填")}｜${escapeHtml(agent.phone || "電話未填")}</span><small>${escapeHtml(agent.address || "通訊地址未填")}${agent.email ? `｜${escapeHtml(agent.email)}` : ""}</small></div>
       <div class="agent-card-actions"><button type="button" class="text-button" data-edit-agent="${escapeAttribute(agent.id)}">編輯</button><button type="button" class="text-button" data-delete-agent="${escapeAttribute(agent.id)}">刪除</button></div>
     </article>`).join("");
   }
@@ -275,7 +303,7 @@ function collectElements(doc) {
   const byId = (id) => doc.getElementById(id);
   return {
     agentForm: byId("agentForm"), agentName: byId("agentName"), agentIdNumber: byId("agentIdNumber"),
-    agentPhone: byId("agentPhone"), agentAddress: byId("agentAddress"), agentSubmit: byId("agentSubmit"),
+    agentPhone: byId("agentPhone"), agentEmail: byId("agentEmail"), agentAddress: byId("agentAddress"), agentSubmit: byId("agentSubmit"),
     agentCancel: byId("agentCancel"), agentList: byId("agentList"), agentEmpty: byId("agentEmpty"),
     housePrincipal: byId("houseTaxPrincipal"), housePrincipalSummary: byId("houseTaxPrincipalSummary"),
     houseBuildings: byId("houseTaxBuildings"), houseCertificate: byId("houseTaxCertificate"),
@@ -294,6 +322,11 @@ function collectElements(doc) {
     realOfficialStatus: byId("realPriceOfficialStatus"), realDownload: byId("downloadRealPricePdf"), realPrint: byId("printRealPricePdf"),
     sharedMapping: byId("sharedFieldMappingRows"),
   };
+}
+
+function replaceObject(target, source) {
+  Object.keys(target).forEach((key) => delete target[key]);
+  Object.assign(target, structuredClone(source));
 }
 
 function renderHouseTaxPreview(element, preview) {

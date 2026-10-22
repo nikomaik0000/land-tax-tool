@@ -8,8 +8,9 @@
   <link rel="apple-touch-icon" href="./icon/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="css/style.css?v=20261022-1">
-  <link rel="stylesheet" href="css/case-documents.css?v=20261021-2">
+  <link rel="stylesheet" href="css/case-documents.css?v=20261022-2">
   <link rel="stylesheet" href="css/case-document-authorizations.css?v=20261021-2">
+  <link rel="stylesheet" href="css/real-price-filing.css?v=20261022-1">
 </head>
 <body>
   <main class="app-container case-document-app">
@@ -41,6 +42,15 @@
       <div id="caseImportStatus" class="case-import-status" aria-live="polite">尚未匯入檔案。</div>
       <div id="caseImportedFiles" class="case-imported-files" aria-label="目前案件已匯入檔案"></div>
       <p id="caseImportedFileCount" class="case-imported-file-count">目前共 0 份唯一檔案。</p>
+    </section>
+
+    <section class="case-shared-toolbar" aria-label="共用案件工具">
+      <div class="case-shared-toolbar-actions">
+        <button id="saveCaseDocuments" class="btn btn-primary" type="button">儲存案件</button>
+        <button id="importCaseDocuments" class="btn btn-secondary" type="button">匯入案件</button>
+        <button id="clearCaseDocuments" class="btn btn-secondary" type="button">清除目前資料</button>
+      </div>
+      <p id="caseFileStatus" aria-live="polite">儲存案件會包含三個子分頁及政府申報草稿；常用代理人名單維持獨立。</p>
     </section>
 
     <nav class="case-document-tabs" role="tablist" aria-label="案件文件子分頁">
@@ -147,6 +157,7 @@
           <label class="field"><span>姓名</span><input id="agentName" type="text" autocomplete="off" required></label>
           <label class="field"><span>身分證統一編號</span><input id="agentIdNumber" type="text" autocomplete="off"></label>
           <label class="field"><span>電話</span><input id="agentPhone" type="tel" autocomplete="off"></label>
+          <label class="field"><span>Email（選填）</span><input id="agentEmail" type="email" autocomplete="email"></label>
           <label class="field"><span>通訊地址</span><input id="agentAddress" type="text" autocomplete="off"></label>
           <div class="agent-editor-actions"><button id="agentSubmit" class="btn btn-primary" type="submit">新增代理人</button><button id="agentCancel" class="btn btn-secondary" type="button" hidden>取消編輯</button></div>
         </form>
@@ -220,6 +231,11 @@
       </div>
 
       <div id="casePanelReal" class="case-document-tab-panel" role="tabpanel" aria-labelledby="caseTabReal" data-case-tab-panel="real" hidden>
+      <nav class="real-price-mode-tabs" role="tablist" aria-label="實價登錄功能切換">
+        <button id="realPriceModePdf" class="real-price-mode-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="realPricePdfPanel" data-real-price-mode="pdf">委託書 PDF</button>
+        <button id="realPriceModeFiling" class="real-price-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="realPriceFilingPanel" data-real-price-mode="filing">政府申報 ZIP</button>
+      </nav>
+      <div id="realPricePdfPanel" role="tabpanel" aria-labelledby="realPriceModePdf" data-real-price-mode-panel="pdf">
       <section class="section authorization-document" aria-labelledby="real-price-title">
         <div class="section-heading">
           <h2 id="real-price-title">實價登錄委託書設定</h2>
@@ -277,6 +293,10 @@
           <p class="official-pdf-footnote">預覽、下載與列印共用同一份瀏覽器端產生的 PDF；資料不會上傳外部服務。3 人以上依官方格式加入附表。</p>
         </section>
       </section>
+      </div>
+      <div id="realPriceFilingPanel" role="tabpanel" aria-labelledby="realPriceModeFiling" data-real-price-mode-panel="filing" hidden>
+        <div id="realPriceGovernmentFiling"></div>
+      </div>
     </div>
 
     <div class="case-document-tab-panel" role="tabpanel" aria-labelledby="caseTabCard" data-case-tab-panel="card">
@@ -299,6 +319,6 @@
 
   <script src="vendor/pdf/pdf-lib.min.js?v=1.17.1"></script>
   <script src="vendor/pdf/fontkit.umd.min.js?v=1.1.1"></script>
-  <script src="js/case-documents-app.js?v=20261021-1" type="module"></script>
+  <script src="js/case-documents-app.js?v=20261022-2" type="module"></script>
 </body>
 </html>

@@ -94,6 +94,32 @@ export function createCaseDocumentState() {
   };
 }
 
+export function normalizeCaseDocumentState(value = {}) {
+  const defaults = createCaseDocumentState();
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const collections = [source.parties, source.lands, source.buildings, source.commonParts, source.importedFiles].filter(Array.isArray);
+  const inferredSequence = collections.flat().reduce((maximum, item) => {
+    const suffix = Number(String(item?.id || "").match(/-(\d+)$/)?.[1]);
+    return Number.isFinite(suffix) ? Math.max(maximum, suffix) : maximum;
+  }, 0);
+  return {
+    ...defaults,
+    ...source,
+    sequence: Math.max(Number.isFinite(Number(source.sequence)) ? Number(source.sequence) : defaults.sequence, inferredSequence),
+    caseInfo: { ...defaults.caseInfo, ...(source.caseInfo || {}) },
+    partySettings: { ...defaults.partySettings, ...(source.partySettings || {}) },
+    parties: Array.isArray(source.parties) ? structuredClone(source.parties) : [],
+    progressValues: { ...defaults.progressValues, ...(source.progressValues || {}) },
+    progressLabels: { ...defaults.progressLabels, ...(source.progressLabels || {}) },
+    lands: Array.isArray(source.lands) ? structuredClone(source.lands) : [],
+    buildings: Array.isArray(source.buildings) ? structuredClone(source.buildings) : [],
+    commonParts: Array.isArray(source.commonParts) ? structuredClone(source.commonParts) : [],
+    buildingMeta: { ...defaults.buildingMeta, ...(source.buildingMeta || {}) },
+    notices: Array.isArray(source.notices) ? [...source.notices] : [],
+    importedFiles: Array.isArray(source.importedFiles) ? structuredClone(source.importedFiles) : [],
+  };
+}
+
 export function getProgressGroups(caseType) {
   return PROGRESS_DEFINITIONS[caseType] || [];
 }

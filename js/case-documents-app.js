@@ -12,6 +12,8 @@ import {
   reconcilePartyShareVisibility,
   renderCaseCard,
 } from "./case-documents-model.js";
+import { buildCaseDocumentsData, normalizeCaseDocumentsData } from "./case-documents-case-file.js";
+import { setupCaseFileActions } from "./case-file.js";
 import {
   addImportedFile,
   hasManualSourceEdits,
@@ -25,8 +27,9 @@ import { mountCaseAuthorizationWorkspace } from "./case-document-authorizations-
 import { mountCaseDocumentTabs } from "./case-document-tabs.js";
 
 const state = createCaseDocumentState();
-mountCaseDocumentTabs();
-const authorizationWorkspace = mountCaseAuthorizationWorkspace(state);
+let hasUnsavedChanges = false;
+const tabs = mountCaseDocumentTabs();
+const authorizationWorkspace = mountCaseAuthorizationWorkspace(state, document, globalThis.localStorage, { onCaseChange: markCaseDirty });
 const elements = {
   fileInput: document.querySelector("#caseCsvFiles"),
   uploadZone: document.querySelector("#caseCsvUploadZone"),
@@ -59,15 +62,92 @@ const elements = {
   viewport: document.querySelector("#caseCardViewport"),
   printButton: document.querySelector("#printCaseCard"),
   printRoot: document.querySelector("#caseCardPrintRoot"),
+  saveCase: document.querySelector("#saveCaseDocuments"),
+  importCase: document.querySelector("#importCaseDocuments"),
+  clearCase: document.querySelector("#clearCaseDocuments"),
+  caseFileStatus: document.querySelector("#caseFileStatus"),
 };
 
 bindCaseFields();
 bindImport();
 bindEditorActions();
 bindPrint();
+bindSharedCaseActions();
+bindDirtyTracking();
 renderAllEditors();
 renderImportedFiles();
 renderPreview();
+
+function bindSharedCaseActions() {
+  setupCaseFileActions({
+    pageType: "case-documents",
+    label: "案件文件",
+    saveButton: elements.saveCase,
+    importButton: elements.importCase,
+    serialize() {
+      const documentData = authorizationWorkspace.getCaseData();
+      return buildCaseDocumentsData(state, documentData.authorizationDocuments, documentData.realPriceFiling);
+    },
+    restore(value) {
+      const restored = normalizeCaseDocumentsData(value);
+      replaceObject(state, restored.caseState);
+      authorizationWorkspace.restoreCaseData(restored);
+      elements.importStatus.textContent = state.importedFiles.length ? "已由案件檔恢復匯入資料。" : "案件檔未包含 CSV 匯入資料。";
+      syncCaseInputs();
+      renderAllEditors();
+      renderImportedFiles();
+      renderPreview();
+      tabs.activate("card");
+      hasUnsavedChanges = false;
+      elements.caseFileStatus.textContent = "案件已匯入；三個子分頁及政府申報草稿均已恢復。";
+    },
+    hasData: () => hasUnsavedChanges,
+    caseName: () => state.caseInfo.caseNumber,
+    onSaved() {
+      hasUnsavedChanges = false;
+      elements.caseFileStatus.textContent = "案件檔已下載；包含三個子分頁及政府申報草稿。";
+    },
+    onError(message) {
+      elements.caseFileStatus.textContent = message;
+      window.alert(message);
+    },
+  });
+
+  elements.clearCase.addEventListener("click", () => {
+    if (!window.confirm("確定清除目前案件及三個子分頁的設定？常用代理人名單不會被刪除。")) return;
+    replaceObject(state, createCaseDocumentState());
+    authorizationWorkspace.clearCaseData();
+    elements.fileInput.value = "";
+    elements.importStatus.textContent = "尚未匯入檔案。";
+    syncCaseInputs();
+    renderAllEditors();
+    renderImportedFiles();
+    renderPreview();
+    tabs.activate("card");
+    hasUnsavedChanges = false;
+    elements.caseFileStatus.textContent = "目前案件及文件設定已清除；常用代理人名單已保留。";
+  });
+}
+
+function bindDirtyTracking() {
+  const workspace = document.querySelector("#authorizationWorkspace");
+  ["input", "change"].forEach((eventName) => workspace.addEventListener(eventName, (event) => {
+    if (event.target.closest("[data-case-tab-panel]")) markCaseDirty();
+  }));
+  workspace.addEventListener("click", (event) => {
+    if (event.target.closest("#addCaseParty, #addCaseLand, #addCaseBuilding, #addCommonPart, [data-remove-id]")) markCaseDirty();
+  });
+}
+
+function markCaseDirty() {
+  hasUnsavedChanges = true;
+  if (elements?.caseFileStatus) elements.caseFileStatus.textContent = "目前案件有尚未儲存的修改。";
+}
+
+function replaceObject(target, source) {
+  Object.keys(target).forEach((key) => delete target[key]);
+  Object.assign(target, structuredClone(source));
+}
 
 function bindCaseFields() {
   elements.district.addEventListener("input", () => {
@@ -141,6 +221,7 @@ function bindImport() {
     if (!file) return;
     if (hasManualSourceEdits(state, file.id) && !window.confirm(`「${file.name}」的匯入資料已有手動修改；移除後這些修改將一併移除。是否繼續？`)) return;
     removeImportedFile(state, file.id);
+    markCaseDirty();
     elements.importStatus.textContent = `已移除：${file.name}`;
     refreshImportedStateViews();
   });
@@ -165,6 +246,7 @@ async function importFiles(files) {
         replaceFileId = conflict.file.id;
       }
       addImportedFile(state, candidate, { replaceFileId });
+      markCaseDirty();
       summaries.push(`${file.name}：${replaceFileId ? "已替換，" : ""}${importedFileSummary(candidate)}${warningSuffix(candidate.parsed.warnings)}`);
     } catch (error) {
       summaries.push(`${file.name}：解析失敗（${error.message}）`);

@@ -26,6 +26,48 @@ export function createAuthorizationDocumentState() {
   };
 }
 
+export function normalizeAuthorizationDocumentState(value = {}) {
+  const defaults = createAuthorizationDocumentState();
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const houseTax = source.houseTax || {};
+  const realPrice = source.realPrice || {};
+  return {
+    houseTax: {
+      ...defaults.houseTax,
+      ...houseTax,
+      buildingIds: Array.isArray(houseTax.buildingIds) ? [...houseTax.buildingIds] : [],
+      applicationItems: Array.isArray(houseTax.applicationItems) ? [...houseTax.applicationItems] : [...defaults.houseTax.applicationItems],
+      manualAgent: normalizeAgent(houseTax.manualAgent),
+    },
+    realPrice: {
+      ...defaults.realPrice,
+      ...realPrice,
+      manualAgent: normalizeAgent(realPrice.manualAgent),
+    },
+  };
+}
+
+export function addAuthorizationAgentSnapshots(documents, agents = []) {
+  const snapshot = normalizeAuthorizationDocumentState(documents);
+  [snapshot.houseTax, snapshot.realPrice].forEach((documentState) => {
+    const selected = documentState.agentMode === "saved" ? agents.find((agent) => agent.id === documentState.agentId) : null;
+    documentState.savedAgentSnapshot = selected ? normalizeAgent(selected) : normalizeAgent(documentState.savedAgentSnapshot);
+  });
+  return snapshot;
+}
+
+export function restoreAuthorizationAgentSnapshots(documents, agents = []) {
+  const restored = normalizeAuthorizationDocumentState(documents);
+  [restored.houseTax, restored.realPrice].forEach((documentState) => {
+    if (documentState.agentMode !== "saved" || !documentState.agentId || agents.some((agent) => agent.id === documentState.agentId)) return;
+    if (!documentState.savedAgentSnapshot?.name) return;
+    documentState.agentMode = "manual";
+    documentState.agentId = "";
+    documentState.manualAgent = normalizeAgent(documentState.savedAgentSnapshot);
+  });
+  return restored;
+}
+
 export function loadAgents(storage = globalThis.localStorage) {
   if (!storage) return [];
   try {
@@ -307,7 +349,7 @@ function formatShare(numerator, denominator) {
 }
 
 function blankAgent() {
-  return { id: "", name: "", idNumber: "", phone: "", address: "" };
+  return { id: "", name: "", idNumber: "", phone: "", email: "", address: "" };
 }
 
 function normalizeAgent(input = {}) {
@@ -316,6 +358,7 @@ function normalizeAgent(input = {}) {
     name: clean(input.name),
     idNumber: clean(input.idNumber),
     phone: clean(input.phone),
+    email: clean(input.email),
     address: clean(input.address),
   };
 }
