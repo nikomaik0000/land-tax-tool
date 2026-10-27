@@ -1,5 +1,9 @@
 import { sanitizeFilename } from "./case-file.js";
 
+export function removeNameWhitespace(value) {
+  return String(value ?? "").replace(/[\p{White_Space}\u200B\uFEFF]+/gu, "");
+}
+
 export function caseCardPdfFilename(parties = []) {
   return partyPairFilename("案件資料卡", {
     obligors: namesByRole(parties, "義務人"),
@@ -42,7 +46,7 @@ function namesByRole(parties, role) {
 
 function uniqueNames(values) {
   return [...new Set((Array.isArray(values) ? values : [])
-    .map((value) => String(value ?? "").replace(/[\p{White_Space}\u200B\uFEFF]+/gu, ""))
+    .map(removeNameWhitespace)
     .filter(Boolean))];
 }
 

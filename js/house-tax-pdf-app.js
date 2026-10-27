@@ -1,6 +1,6 @@
 import { HOUSE_TAX_PDF_ASSETS } from "./house-tax-pdf-coordinates.js";
-import { buildHouseTaxPdfIssues, generateHouseTaxPdf } from "./house-tax-pdf-overlay.js";
-import { houseTaxPdfFilename } from "./case-document-filenames.js?v=20261027-2";
+import { buildHouseTaxPdfIssues, generateHouseTaxPdf } from "./house-tax-pdf-overlay.js?v=20261027-3";
+import { houseTaxPdfFilename } from "./case-document-filenames.js?v=20261027-3";
 
 export function createHouseTaxPdfController(elements, win = globalThis) {
   let timer = 0;

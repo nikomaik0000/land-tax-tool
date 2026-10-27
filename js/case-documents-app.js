@@ -23,9 +23,9 @@ import {
   removeImportedFile,
 } from "./case-documents-import.js";
 import { preparePrintableCaseCard } from "./case-documents-print.js";
-import { mountCaseAuthorizationWorkspace } from "./case-document-authorizations-app.js?v=20261027-2";
+import { mountCaseAuthorizationWorkspace } from "./case-document-authorizations-app.js?v=20261027-3";
 import { mountCaseDocumentTabs } from "./case-document-tabs.js";
-import { caseCardPdfFilename, caseDataJsonFilename } from "./case-document-filenames.js?v=20261027-2";
+import { caseCardPdfFilename, caseDataJsonFilename } from "./case-document-filenames.js?v=20261027-3";
 
 const state = createCaseDocumentState();
 let hasUnsavedChanges = false;

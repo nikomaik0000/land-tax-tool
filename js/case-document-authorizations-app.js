@@ -13,7 +13,7 @@ import {
   syncAuthorizationDefaults,
   upsertAgent,
 } from "./case-document-authorizations.js";
-import { createHouseTaxPdfController } from "./house-tax-pdf-app.js?v=20261027-2";
+import { createHouseTaxPdfController } from "./house-tax-pdf-app.js?v=20261027-3";
 import { createRealPricePdfController } from "./real-price-pdf-app.js?v=20261027-2";
 import { mountRealPriceFilingWorkspace } from "./real-price-filing-app.js?v=20261027-2";
 

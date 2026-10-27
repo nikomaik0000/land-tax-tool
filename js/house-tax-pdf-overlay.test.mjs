@@ -3,7 +3,24 @@ import assert from "node:assert/strict";
 import { createHash, webcrypto } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { HOUSE_TAX_PDF_ASSETS, HOUSE_TAX_PDF_FIELDS, HOUSE_TAX_PDF_LAYOUT, HOUSE_TAX_TEMPLATE } from "./house-tax-pdf-coordinates.js";
-import { buildHouseTaxPdfIssues, generateHouseTaxPdf } from "./house-tax-pdf-overlay.js";
+import { buildHouseTaxAgentDisplayNames, buildHouseTaxPdfIssues, generateHouseTaxPdf } from "./house-tax-pdf-overlay.js";
+
+test("委任敘述移除代理人姓名空白，下方姓名欄與來源資料維持原值", () => {
+  const agent = { name: "簡 建\u3000興\u2009\u200B" };
+  const original = structuredClone(agent);
+  const displayNames = buildHouseTaxAgentDisplayNames(agent.name);
+
+  assert.equal(displayNames.authorization, "簡建興");
+  assert.equal(displayNames.field, agent.name);
+  assert.deepEqual(agent, original);
+});
+
+test("代理人姓名沒有空白時，上下兩處顯示內容相同", () => {
+  assert.deepEqual(buildHouseTaxAgentDisplayNames("簡建興"), {
+    authorization: "簡建興",
+    field: "簡建興",
+  });
+});
 
 test("非必要缺漏不阻擋輸出，多筆房屋坐落由擴大區域的實際排版檢查", () => {
   const base = {

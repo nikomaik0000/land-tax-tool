@@ -2,6 +2,7 @@ import {
   HOUSE_TAX_PDF_FIELDS,
   HOUSE_TAX_TEMPLATE,
 } from "./house-tax-pdf-coordinates.js";
+import { removeNameWhitespace } from "./case-document-filenames.js?v=20261027-3";
 
 export class HouseTaxPdfError extends Error {
   constructor(message, code = "HOUSE_TAX_PDF_ERROR") {
@@ -21,6 +22,14 @@ export function buildHouseTaxPdfIssues(preview) {
     if (!building.address) issues.push(`建物 ${building.buildingNumber || building.id} 的完整房屋坐落缺漏`);
   });
   return [...new Set(issues)];
+}
+
+export function buildHouseTaxAgentDisplayNames(value) {
+  const original = value === null || value === undefined ? "" : String(value);
+  return {
+    authorization: removeNameWhitespace(original),
+    field: original,
+  };
 }
 
 export async function generateHouseTaxPdf({
@@ -45,14 +54,15 @@ export async function generateHouseTaxPdf({
   const page = pdfDocument.getPage(0);
   const ink = pdfLib.rgb(0, 0, 0);
   const fields = HOUSE_TAX_PDF_FIELDS;
+  const agentNames = buildHouseTaxAgentDisplayNames(preview.agent.name);
 
   if (preview.applicationItems.includes("房屋稅稅籍證明")) drawCheckbox(page, fields.certificateCheckbox, ink);
   drawBuildingAddresses(page, preview.buildings, fields.buildingAddress, font, ink);
-  const authorizationAgent = drawFitText(page, preview.agent.name, fields.authorizationAgentName, font, ink);
+  const authorizationAgent = drawFitText(page, agentNames.authorization, fields.authorizationAgentName, font, ink);
   drawAuthorizationPhrase(page, authorizationAgent, fields.authorizationPhrase, font, ink);
   drawFitText(page, preview.principal.name, fields.principalName, font, ink);
   drawFitText(page, preview.principal.idNumber, fields.principalIdNumber, font, ink);
-  drawFitText(page, preview.agent.name, fields.agentName, font, ink);
+  drawFitText(page, agentNames.field, fields.agentName, font, ink);
   drawFitText(page, preview.agent.idNumber, fields.agentIdNumber, font, ink);
   drawFitText(page, preview.agent.phone, fields.agentPhone, font, ink);
 
