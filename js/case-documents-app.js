@@ -23,8 +23,9 @@ import {
   removeImportedFile,
 } from "./case-documents-import.js";
 import { preparePrintableCaseCard } from "./case-documents-print.js";
-import { mountCaseAuthorizationWorkspace } from "./case-document-authorizations-app.js";
+import { mountCaseAuthorizationWorkspace } from "./case-document-authorizations-app.js?v=20261027-2";
 import { mountCaseDocumentTabs } from "./case-document-tabs.js";
+import { caseCardPdfFilename, caseDataJsonFilename } from "./case-document-filenames.js?v=20261027-2";
 
 const state = createCaseDocumentState();
 let hasUnsavedChanges = false;
@@ -103,6 +104,7 @@ function bindSharedCaseActions() {
     },
     hasData: () => hasUnsavedChanges,
     caseName: () => state.caseInfo.caseNumber,
+    filename: (date) => caseDataJsonFilename(state.parties, date),
     onSaved() {
       hasUnsavedChanges = false;
       elements.caseFileStatus.textContent = "案件檔已下載；包含三個子分頁及政府申報草稿。";
@@ -539,13 +541,26 @@ function renderPreview() {
 
 function bindPrint() {
   const prepare = () => preparePrintableCaseCard(elements.printRoot, renderCaseCard(state));
+  let titleBeforePrint = "";
+  let titleChangedForPrint = false;
+  const prepareTitle = () => {
+    if (!titleChangedForPrint) titleBeforePrint = document.title;
+    titleChangedForPrint = true;
+    document.title = caseCardPdfFilename(state.parties).replace(/\.pdf$/i, "");
+  };
+  const restoreTitle = () => {
+    if (!titleChangedForPrint) return;
+    document.title = titleBeforePrint;
+    titleBeforePrint = "";
+    titleChangedForPrint = false;
+  };
   elements.printButton.addEventListener("click", () => {
     prepare();
-    document.title = `${(state.caseInfo.caseNumber || "案件資料卡").replace(/[\\/:*?"<>|]/g, "_")}_案件資料卡`;
+    prepareTitle();
     requestAnimationFrame(() => window.print());
   });
-  window.addEventListener("beforeprint", prepare);
-  window.addEventListener("afterprint", () => { elements.printRoot.replaceChildren(); });
+  window.addEventListener("beforeprint", () => { prepare(); prepareTitle(); });
+  window.addEventListener("afterprint", () => { elements.printRoot.replaceChildren(); restoreTitle(); });
 }
 
 function scalePreview() {

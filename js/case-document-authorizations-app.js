@@ -13,9 +13,9 @@ import {
   syncAuthorizationDefaults,
   upsertAgent,
 } from "./case-document-authorizations.js";
-import { createHouseTaxPdfController } from "./house-tax-pdf-app.js";
-import { createRealPricePdfController } from "./real-price-pdf-app.js";
-import { mountRealPriceFilingWorkspace } from "./real-price-filing-app.js";
+import { createHouseTaxPdfController } from "./house-tax-pdf-app.js?v=20261027-2";
+import { createRealPricePdfController } from "./real-price-pdf-app.js?v=20261027-2";
+import { mountRealPriceFilingWorkspace } from "./real-price-filing-app.js?v=20261027-2";
 
 export function mountCaseAuthorizationWorkspace(caseState, doc = document, storage = globalThis.localStorage, { onCaseChange = () => {} } = {}) {
   const root = doc.querySelector("#authorizationWorkspace");

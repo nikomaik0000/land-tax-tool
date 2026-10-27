@@ -21,6 +21,7 @@ import {
   syncRealPriceFilingFromCase,
   validateRealPriceFiling,
 } from "./real-price-filing.js";
+import { realPriceZipFilename } from "./case-document-filenames.js?v=20261027-2";
 
 export function mountRealPriceFilingWorkspace({ caseState, getAgents, storage = globalThis.localStorage, doc = document, onChange = () => {} }) {
   const root = doc.querySelector("#realPriceGovernmentFiling");
@@ -398,7 +399,7 @@ export function mountRealPriceFilingWorkspace({ caseState, getAgents, storage = 
       const basename = createCandidateBasename(draft);
       const jsonText = JSON.stringify(buildRealPriceGovernmentJson(draft), null, 2);
       if (type === "json") downloadBlob(new Blob([jsonText], { type: "application/json;charset=utf-8" }), `${basename}.json`);
-      else downloadBlob(new Blob([createSingleFileZip(`${basename}.json`, jsonText)], { type: "application/zip" }), `${basename}.zip`);
+      else downloadBlob(new Blob([createSingleFileZip(`${basename}.json`, jsonText)], { type: "application/zip" }), realPriceZipFilename(draft));
     } catch (error) {
       validationErrors = [{ key: "output", message: `候選檔案產生失敗：${error.message || "未知錯誤"}`, severity: "error" }];
       renderValidation();

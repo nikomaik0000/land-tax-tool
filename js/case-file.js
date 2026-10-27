@@ -60,13 +60,14 @@ export async function readCaseFile(file, expectedPageType) {
   return parseCaseFile(await file.text(), expectedPageType);
 }
 
-export function setupCaseFileActions({ pageType, label, saveButton, importButton, serialize, restore, hasData, caseName, onSaved = () => {}, onRestored = () => {}, onError = (message) => window.alert(message) }) {
+export function setupCaseFileActions({ pageType, label, saveButton, importButton, serialize, restore, hasData, caseName, filename, onSaved = () => {}, onRestored = () => {}, onError = (message) => window.alert(message) }) {
   const input = document.createElement("input");
   input.type = "file"; input.accept = ".json,application/json"; input.className = "visually-hidden";
   document.body.append(input);
   saveButton?.addEventListener("click", () => {
     try {
-      downloadCaseFile(buildCaseFile(pageType, serialize()), caseFilename(label, caseName?.()));
+      const date = new Date();
+      downloadCaseFile(buildCaseFile(pageType, serialize()), filename?.(date) || caseFilename(label, caseName?.(), date));
       onSaved();
     }
     catch (error) { onError(error?.message || "案件檔無法儲存。"); }

@@ -1,11 +1,12 @@
 import { REAL_PRICE_PDF_ASSETS } from "./real-price-pdf-coordinates.js";
 import { buildRealPricePdfIssues, generateRealPricePdf } from "./real-price-pdf-overlay.js";
+import { realPricePdfFilename } from "./case-document-filenames.js?v=20261027-2";
 
 export function createRealPricePdfController(elements, win = globalThis) {
   let timer = 0;
   let generation = 0;
   let currentUrl = "";
-  let currentFilename = "實價登錄委託書.pdf";
+  let currentFilename = realPricePdfFilename();
   const assetsPromise = Promise.all([
     fetchBytes(REAL_PRICE_PDF_ASSETS.template, win),
     fetchBytes(REAL_PRICE_PDF_ASSETS.font, win),
@@ -59,7 +60,7 @@ export function createRealPricePdfController(elements, win = globalThis) {
     const nextUrl = win.URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
     if (currentUrl) win.URL.revokeObjectURL(currentUrl);
     currentUrl = nextUrl;
-    currentFilename = buildFilename(preview);
+    currentFilename = realPricePdfFilename(preview);
     elements.preview.src = currentUrl;
     elements.preview.hidden = false;
     elements.placeholder.hidden = true;
@@ -95,9 +96,4 @@ async function fetchBytes(url, win) {
   const response = await win.fetch(url);
   if (!response.ok) throw new Error(`無法載入本機 PDF 資產：${url}`);
   return new Uint8Array(await response.arrayBuffer());
-}
-
-function buildFilename(preview) {
-  const first = String(preview.entrustors?.[0]?.name || "委託人").replace(/[\\/:*?"<>|]/g, "_");
-  return `實價登錄委託書_${first}.pdf`;
 }

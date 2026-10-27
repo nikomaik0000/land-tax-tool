@@ -1,11 +1,12 @@
 import { HOUSE_TAX_PDF_ASSETS } from "./house-tax-pdf-coordinates.js";
 import { buildHouseTaxPdfIssues, generateHouseTaxPdf } from "./house-tax-pdf-overlay.js";
+import { houseTaxPdfFilename } from "./case-document-filenames.js?v=20261027-2";
 
 export function createHouseTaxPdfController(elements, win = globalThis) {
   let timer = 0;
   let generation = 0;
   let currentUrl = "";
-  let currentFilename = "房屋稅籍查詢委任書.pdf";
+  let currentFilename = houseTaxPdfFilename();
   const assetsPromise = Promise.all([
     fetchBytes(HOUSE_TAX_PDF_ASSETS.template, win),
     fetchBytes(HOUSE_TAX_PDF_ASSETS.font, win),
@@ -59,7 +60,7 @@ export function createHouseTaxPdfController(elements, win = globalThis) {
     const nextUrl = win.URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
     if (currentUrl) win.URL.revokeObjectURL(currentUrl);
     currentUrl = nextUrl;
-    currentFilename = buildFilename(preview);
+    currentFilename = houseTaxPdfFilename(preview);
     elements.preview.src = currentUrl;
     elements.preview.hidden = false;
     elements.placeholder.hidden = true;
@@ -95,9 +96,4 @@ async function fetchBytes(url, win) {
   const response = await win.fetch(url);
   if (!response.ok) throw new Error(`無法載入本機 PDF 資產：${url}`);
   return new Uint8Array(await response.arrayBuffer());
-}
-
-function buildFilename(preview) {
-  const principal = String(preview.principal?.name || "委任人").replace(/[\\/:*?"<>|]/g, "_");
-  return `房屋稅籍查詢委任書_${principal}.pdf`;
 }
