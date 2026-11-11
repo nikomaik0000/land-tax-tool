@@ -87,7 +87,7 @@ function renderPreview() {
   elements.a4Sheet.classList.add(`report-font-${state.displayOptions.fontSize}`);
   document.body.classList.toggle("print-portrait", state.displayOptions.orientation === "portrait");
   document.body.classList.toggle("print-landscape", state.displayOptions.orientation === "landscape");
-  elements.dynamicPrintPage.textContent = `@page { size: A4 ${state.displayOptions.orientation}; margin: 8mm; }`;
+  elements.dynamicPrintPage.textContent = `@page { size: A4 ${state.displayOptions.orientation}; margin: 10mm; }`;
   elements.reportOverflowWarning.textContent = report.warningMessage;
   elements.reportOverflowWarning.hidden = !report.warning;
   requestAnimationFrame(() => {

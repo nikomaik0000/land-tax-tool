@@ -203,6 +203,9 @@
   }
   .a4-sheet.orientation-portrait { width: 194mm; max-width: 194mm; height: auto; min-height: 0; }
   .a4-sheet.orientation-landscape { width: 281mm; max-width: 281mm; height: auto; min-height: 0; }
+  .land-tax-page #a4Sheet .report-document { --print-line: #000000; }
+  .land-tax-page #a4Sheet.orientation-portrait { width: 190mm; max-width: 100%; }
+  .land-tax-page #a4Sheet.orientation-landscape { width: 277mm; max-width: 100%; }
   .a4-sheet:last-child { break-after: auto; page-break-after: auto; }
   body:has(.batch-report-host.is-print-ready) > *:not(.batch-report-host) { display: none !important; }
   .batch-report-host.is-print-ready { display: block !important; width: 100%; margin: 0; padding: 0; background: var(--print-white); }
