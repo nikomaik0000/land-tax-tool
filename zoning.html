@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>土地使用分區批次查詢</title>
   <link rel="icon" href="./icon/favicon.svg" type="image/svg+xml"><link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="css/style.css?v=20261022-1"><link rel="stylesheet" href="css/land-value-update.css?v=20260902-1"><link rel="stylesheet" href="css/land-number-converter.css?v=20260902-1"><link rel="stylesheet" href="css/print.css?v=20260921-2">
+  <link rel="stylesheet" href="css/style.css?v=20261022-1"><link rel="stylesheet" href="css/land-value-update.css?v=20260902-1"><link rel="stylesheet" href="css/land-number-converter.css?v=20260902-1"><link rel="stylesheet" href="css/print.css?v=20261111-1">
 </head>
 <body><main class="app-container">
   <header class="site-header"><p class="eyebrow">LAND ZONING TOOL</p><h1>土地使用分區批次查詢</h1>
@@ -32,4 +32,4 @@
     <p id="zoningMessage" class="validation-message" hidden></p><p class="converter-footnote">開放資料查詢結果僅供參考；實施依據仍以主管機關公告及依法申請之證明為準。</p><fieldset class="print-settings"><legend>紙張方向</legend><label class="radio-option"><input name="zoningPrintOrientation" type="radio" value="portrait"><span>直向</span></label><label class="radio-option"><input name="zoningPrintOrientation" type="radio" value="landscape" checked><span>橫向</span></label></fieldset>
     <div class="actions result-actions"><button id="saveZoningCase" class="btn btn-secondary" type="button">儲存案件</button><button id="importZoningCase" class="btn btn-secondary" type="button">導入案件</button><button id="clearZoning" class="btn btn-secondary" type="button">清除目前資料</button><button id="downloadZoning" class="btn btn-primary" type="button" disabled>下載結果 Excel</button><button id="printZoning" class="btn btn-primary" type="button" disabled>列印 / 儲存 PDF</button></div>
   </section>
-</main><div id="zoningPrintReport" class="batch-report-host" aria-hidden="true"></div><style id="zoningPrintPage">@page { size: A4 landscape; margin: 8mm; }</style><script src="js/zoning-app.js?v=20260921-1" type="module"></script></body></html>
+</main><div id="zoningPrintReport" class="batch-report-host" aria-hidden="true"></div><style id="zoningPrintPage">@page { size: A4 landscape; margin: 10mm; }</style><script src="js/zoning-app.js?v=20261111-1" type="module"></script></body></html>

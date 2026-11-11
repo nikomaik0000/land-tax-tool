@@ -40,3 +40,17 @@ test("shared printer prevents an empty report", () => {
   assert.equal(host.innerHTML, "");
   assert.equal(warning, "目前沒有可列印的查詢結果。");
 });
+
+test("shared printer uses a 10mm safe margin", () => {
+  const host = { innerHTML: "", className: "" }; const pageStyle = { textContent: "" };
+  const printer = createReportPrinter({
+    host,
+    pageStyle,
+    getOrientation: () => "landscape",
+    getReport: () => ({ title: "驗證報表", columns: [{ label: "欄位", key: "value" }], rows: [{ value: "內容" }] }),
+    getRowCount: () => 1,
+    onEmpty: () => {}
+  });
+  assert.equal(printer.sync(), true);
+  assert.equal(pageStyle.textContent, "@page { size: A4 landscape; margin: 10mm; }");
+});

@@ -190,7 +190,7 @@ function renderTranscriptOutput() {
   elements.a4Sheet.className = `a4-sheet orientation-${transcriptState.displayOptions.orientation} table-spacing-${transcriptState.displayOptions.tableSpacing} section-spacing-${transcriptState.displayOptions.sectionSpacing} report-font-${transcriptState.displayOptions.fontSize}`;
   document.body.classList.toggle("print-portrait", transcriptState.displayOptions.orientation === "portrait");
   document.body.classList.toggle("print-landscape", transcriptState.displayOptions.orientation === "landscape");
-  elements.dynamicPrintPage.textContent = `@page { size: A4 ${transcriptState.displayOptions.orientation}; margin: 8mm; }`;
+  elements.dynamicPrintPage.textContent = `@page { size: A4 ${transcriptState.displayOptions.orientation}; margin: 10mm; }`;
   elements.reportWarning.textContent = report.warningMessage;
   elements.reportWarning.hidden = !report.warning;
   requestAnimationFrame(updatePreviewScale);

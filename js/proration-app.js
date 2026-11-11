@@ -1,4 +1,4 @@
-import { setupBatchWorkspace } from "./proration-batch-app.js";
+import { setupBatchWorkspace } from "./proration-batch-app.js?v=20261111-1";
 import { setupCaseFileActions } from "./case-file.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
 import { formatMoney, parseFormattedNumber } from "./formatters.js";

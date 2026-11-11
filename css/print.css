@@ -39,6 +39,8 @@
 .batch-report-host { display: none; }
 .batch-report-host.is-measuring { display: block; position: absolute; top: 0; left: -10000px; width: 194mm; visibility: hidden; }
 .batch-report-host.is-measuring .a4-sheet { width: 194mm; max-width: 194mm; height: auto; min-height: 0; margin: 0; padding: 0; transform: none !important; box-shadow: none; }
+#batchReportHost.is-measuring { width: 190mm; }
+#batchReportHost.is-measuring .a4-sheet { width: 190mm; max-width: 190mm; }
 .report-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 1mm 6mm; margin-top: 2mm; color: var(--print-dark); font-size: 9.75px; }
 .report-table { width: 100%; table-layout: fixed; border: 1.5px solid var(--print-black); border-collapse: collapse; color: var(--print-dark); font-size: 10px; line-height: 1.4; }
 .report-table th,
@@ -206,12 +208,26 @@
   .land-tax-page #a4Sheet .report-document { --print-line: #000000; }
   .land-tax-page #a4Sheet.orientation-portrait { width: 190mm; max-width: 100%; }
   .land-tax-page #a4Sheet.orientation-landscape { width: 277mm; max-width: 100%; }
+  #transcriptA4Sheet.orientation-portrait { width: 190mm; max-width: 100%; }
+  #transcriptA4Sheet.orientation-landscape { width: 277mm; max-width: 100%; }
+  #transcriptA4Sheet .a4-land-table,
+  #transcriptA4Sheet .report-tax-summary,
+  #transcriptA4Sheet .report-owner-tax-table,
+  #transcriptA4Sheet .gift-tax-table,
+  #singleProrationWorkspace #a4Sheet table,
+  #batchReportHost table,
+  #landValuePrintReport .report-table,
+  #converterPrintReport .report-table,
+  #zoningPrintReport .report-table { --print-line: #000000; }
+  #singleProrationWorkspace #a4Sheet.orientation-portrait { width: 190mm; max-width: 100%; }
+  #singleProrationWorkspace #a4Sheet.orientation-landscape { width: 277mm; max-width: 100%; }
   .a4-sheet:last-child { break-after: auto; page-break-after: auto; }
   body:has(.batch-report-host.is-print-ready) > *:not(.batch-report-host) { display: none !important; }
   .batch-report-host.is-print-ready { display: block !important; width: 100%; margin: 0; padding: 0; background: var(--print-white); }
   .batch-report-document { width: 100%; color: var(--print-dark); }
   .batch-report-document .report-header { break-after: avoid; }
   .batch-report-host.is-print-ready .a4-sheet { width: 194mm; max-width: 194mm; height: auto; min-height: 0; margin: 0 auto; padding: 0; break-inside: avoid; page-break-inside: avoid; }
+  #batchReportHost.is-print-ready .a4-sheet { width: 190mm; max-width: 100%; }
   .batch-report-host.is-print-ready .a4-sheet + .a4-sheet { break-before: page; page-break-before: always; }
   .report-table thead { display: table-header-group; }
   .report-table tfoot { display: table-footer-group; }

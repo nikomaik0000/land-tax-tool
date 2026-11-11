@@ -2,7 +2,7 @@ import { formatArea, formatLandNumber, formatMoney, parseFormattedNumber } from 
 import { LAND_VALUE_DATA, LAND_VALUE_SOURCES, getLandValueSource } from "./land-value-sources.js";
 import { buildLandValueDiagnosticKey, buildLandValueKey, compareLandValueRecord, normalizeCity, normalizeLandValueRecord, splitSectionAndSubsection } from "./land-value-normalization.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
-import { createReportPrinter, formatReportDate } from "./report-print.js";
+import { createReportPrinter, formatReportDate } from "./report-print.js?v=20261111-1";
 import { setupCaseFileActions } from "./case-file.js";
 
 const SHEETJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";

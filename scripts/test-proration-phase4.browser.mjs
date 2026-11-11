@@ -467,6 +467,26 @@ test("one overlong household is disclosed and excluded only after confirmation",
   assert.equal((await PDFDocument.load(await page.pdf({ preferCSSPageSize: true }))).getPageCount(), 2);
 });
 
+test("277mm print-height boundary keeps the fitting household and explicitly excludes the 278mm household", async () => {
+  await page.locator("#showBatchProration").click();
+  await page.locator("#batchCaseFile").setInputFiles({ name: "height-boundary.json", mimeType: "application/json", buffer: await batchJson(2) });
+  await page.waitForFunction(() => document.querySelector("#batchSummary").textContent.includes("共 2 戶"));
+  await page.evaluate(() => {
+    window.print = () => { window.__batchPrinted = true; };
+    window.__heightBoundaryObserver = new MutationObserver(() => {
+      [...document.querySelectorAll("#batchReportHost .a4-sheet")].forEach((article, index) => {
+        article.style.height = index === 0 ? "276.5mm" : "278mm";
+        article.style.boxSizing = "border-box";
+      });
+    });
+    window.__heightBoundaryObserver.observe(document.querySelector("#batchReportHost"), { childList: true });
+  });
+  await clickBatchPrint();
+  assert.equal(await page.evaluate(() => window.__batchPrinted), true);
+  assert.match(await page.locator("#batchPrintStatus").textContent(), /已排除：第2戶：內容超出一張 A4 的高度/);
+  assert.deepEqual(await page.locator("#batchReportHost .batch-report-document").evaluateAll((items) => items.map((item) => item.querySelector("h2").textContent)), ["第1戶（1號） 立源富立方"]);
+});
+
 test("overlong names and notes are checked for page width and height", async () => {
   const file = JSON.parse((await batchJson(3)).toString());
   setField(file.data.rows[0].values, "customer.buyer", "非常長的買方姓名".repeat(150));

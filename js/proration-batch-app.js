@@ -241,7 +241,7 @@ export function setupBatchWorkspace({ root, singleRoot, getSingleState, onShowSi
       }
       printHost.classList.add("is-measuring");
       await document.fonts.ready;
-      const maxHeight = 279 * 96 / 25.4;
+      const maxHeight = 277 * 96 / 25.4;
       const excluded = invalidSelected.map((row) => `${row.label}：${row.reason}`);
       let printable = 0;
       for (const [index, article] of [...printHost.children].entries()) {

@@ -3,7 +3,7 @@ import { normalizeCity, normalizeDistrict } from "./land-value-normalization.js"
 import { applyLookup, createDistrictLookup, detectLandNumberHeaderRow, expandResultRows, parseWorkbookRecords } from "./land-number-converter-core.js";
 import { LAND_NUMBER_SOURCES, getLandNumberSourceByCity } from "./land-number-sources.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
-import { createReportPrinter, formatReportDate } from "./report-print.js";
+import { createReportPrinter, formatReportDate } from "./report-print.js?v=20261111-1";
 import { setupCaseFileActions } from "./case-file.js";
 
 const STORAGE_KEY = "landTool.landNumberConverterState";

@@ -21,7 +21,7 @@ export function createReportPrinter({ host, pageStyle, getOrientation, getReport
     host.innerHTML = hasRows ? renderReportShell(getReport()) : "";
     const orientation = getOrientation();
     host.className = `batch-report-host orientation-${orientation}${hasRows ? " is-print-ready" : ""}`;
-    pageStyle.textContent = `@page { size: A4 ${orientation}; margin: 8mm; }`;
+    pageStyle.textContent = `@page { size: A4 ${orientation}; margin: 10mm; }`;
     return hasRows;
   }
   function print() {

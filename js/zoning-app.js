@@ -3,7 +3,7 @@ import { normalizeCity } from "./land-value-normalization.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
 import { parseZoningWorkbookRecords } from "./zoning-core.js";
 import { loadTaipeiZoningManifest, lookupZoningRecords } from "./zoning-source.js";
-import { createReportPrinter, formatReportDate } from "./report-print.js";
+import { createReportPrinter, formatReportDate } from "./report-print.js?v=20261111-1";
 import { setupCaseFileActions } from "./case-file.js";
 
 const STORAGE_KEY = "landTool.zoningState";
