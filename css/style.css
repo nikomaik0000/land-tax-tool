@@ -218,6 +218,20 @@ select:focus { border-color: #555555; }
 .custom-notes-list { display: grid; gap: 14px; }
 .custom-note-item { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--ui-border); border-radius: 8px; }
 .custom-note-actions { display: flex; justify-content: flex-end; }
+.note-editor-toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.note-editor-toolbar button { min-width: 38px; min-height: 34px; padding: 5px 10px; border: 1px solid var(--ui-border); border-radius: 6px; background: #ffffff; color: #333333; font: inherit; cursor: pointer; }
+.note-editor-toolbar button:hover,
+.note-editor-toolbar button:focus-visible { border-color: var(--ui-text); outline: none; box-shadow: 0 0 0 2px rgba(34, 34, 34, 0.12); }
+.note-rich-editor { min-height: 104px; max-height: 280px; padding: 10px 12px; overflow: auto; border: 1px solid var(--ui-border); border-radius: 6px; background: #ffffff; color: #222222; line-height: 1.55; white-space: normal; overflow-wrap: anywhere; }
+.note-rich-editor:focus { border-color: var(--ui-text); outline: none; box-shadow: 0 0 0 2px rgba(34, 34, 34, 0.12); }
+.note-rich-editor:empty::before { color: #777777; content: attr(data-placeholder); pointer-events: none; }
+.note-rich-editor p { margin: 0 0 0.45em; }
+.note-rich-editor p:last-child { margin-bottom: 0; }
+.note-rich-editor ul,
+.note-rich-editor ol { margin: 0 0 0.45em; padding-inline-start: 1.6em; list-style-position: outside; }
+.note-rich-editor ul[data-marker="bullet"] { list-style-type: disc; }
+.note-rich-editor ul[data-marker="diamond"] { list-style-type: "◆  "; }
+.note-rich-editor li { padding-inline-start: 0.15em; }
 .nested-options { margin-left: 28px; }
 .nested-options > .settings-description { margin: 0; }
 .nested-options > .btn { width: fit-content; min-height: 38px; padding: 0 14px; font-size: 12px; }

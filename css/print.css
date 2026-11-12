@@ -148,6 +148,38 @@
 .report-note-detail { margin: 1mm 0 0 7mm; padding-left: 0; }
 .report-custom-notice .notice-custom-content { margin-left: 1em; white-space: pre-wrap; }
 .report-note-list { margin: 0; padding-left: 0; list-style-position: inside; }
+.land-tax-page #a4Sheet.note-font-small { --land-tax-note-body-size: 12px; --land-tax-note-title-size: 14px; }
+.land-tax-page #a4Sheet.note-font-medium { --land-tax-note-body-size: 14px; --land-tax-note-title-size: 16px; }
+.land-tax-page #a4Sheet.note-font-large { --land-tax-note-body-size: 16px; --land-tax-note-title-size: 18px; }
+.land-tax-page #a4Sheet .report-notes-section,
+.land-tax-page #a4Sheet .report-notices-section { --note-body-size: var(--land-tax-note-body-size, 14px); --note-title-size: var(--land-tax-note-title-size, 16px); font-size: var(--note-body-size); }
+.land-tax-page #a4Sheet .report-notes-section h3,
+.land-tax-page #a4Sheet .report-notices-section h3 { font-size: var(--note-title-size); font-weight: 600; break-after: avoid; page-break-after: avoid; }
+.land-tax-page #a4Sheet .report-notes-section .report-clause,
+.land-tax-page #a4Sheet .report-notices-section .report-notice-list,
+.land-tax-page #a4Sheet .report-notes-section .report-note-list,
+.land-tax-page #a4Sheet .report-rich-content { font-size: var(--note-body-size); }
+.land-tax-page #a4Sheet .report-note-heading,
+.land-tax-page #a4Sheet .report-custom-notice > .report-clause-title { font-size: var(--note-title-size); font-weight: 600; }
+.land-tax-page #a4Sheet .report-note-heading.report-note-line { font-size: var(--note-body-size); font-weight: 400; }
+.land-tax-page #a4Sheet .report-note-heading.report-note-line .report-clause-title { font-weight: 400; }
+.land-tax-page #a4Sheet .report-note-heading { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; column-gap: 0.5em; color: var(--print-black); line-height: var(--clause-line-height); }
+.land-tax-page #a4Sheet .report-note-marker { grid-column: 1; }
+.land-tax-page #a4Sheet .report-note-heading .report-clause-title { grid-column: 2; min-width: 0; font-size: inherit; line-height: inherit; overflow-wrap: anywhere; word-break: break-word; }
+.land-tax-page #a4Sheet .report-note-heading.report-plain-note-heading { display: block; }
+.land-tax-page #a4Sheet .report-note-heading.report-plain-note-heading .report-clause-title { display: block; }
+.land-tax-page #a4Sheet .report-rich-content { min-width: 0; color: var(--print-dark); line-height: var(--clause-line-height); overflow: visible; }
+.land-tax-page #a4Sheet .report-rich-content p { margin: 0; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.land-tax-page #a4Sheet .report-rich-content p + p,
+.land-tax-page #a4Sheet .report-rich-content .report-rich-list + p,
+.land-tax-page #a4Sheet .report-rich-content p + .report-rich-list,
+.land-tax-page #a4Sheet .report-rich-content .report-rich-list + .report-rich-list { margin-top: 0.45em; }
+.land-tax-page #a4Sheet .report-rich-list { margin: 0; padding-inline-start: 1.65em; list-style-position: outside; }
+.land-tax-page #a4Sheet .report-rich-list-bullet { list-style-type: disc; }
+.land-tax-page #a4Sheet .report-rich-list-diamond { list-style-type: "◆  "; }
+.land-tax-page #a4Sheet .report-rich-list li { padding: 0; overflow-wrap: anywhere; word-break: break-word; }
+.land-tax-page #a4Sheet .report-custom-note-titleless .report-rich-content { padding-left: 0; }
+.land-tax-page #a4Sheet .report-custom-notice .notice-custom-content { margin-left: 0; }
 .report-document.density-compact { --section-gap: calc(var(--base-section-gap) * 0.8); --header-gap: calc(var(--base-header-gap) * 0.8); --meta-gap: calc(var(--base-meta-gap) * 0.8); --clause-pad: calc(var(--base-clause-pad) * 0.8); }
 .report-document.density-compact .a4-land-table th,
 .report-document.density-compact .a4-land-table td { padding-right: 3px; padding-left: 3px; }

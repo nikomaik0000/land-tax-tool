@@ -2,6 +2,7 @@ import { calculateGiftTax } from "./calculations.js";
 import { clauses } from "./clauses.js";
 import { formatMoney, parseFormattedNumber } from "./formatters.js";
 import { defaultNoticeItems, noticeDefinitions } from "./notices.js";
+import { createEmptyNoteDocument, mountNoteEditor } from "./note-editor.js";
 
 let settingsInstance = 0;
 
@@ -48,7 +49,7 @@ function checked(value) { return value ? " checked" : ""; }
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const createItemId = (prefix) => globalThis.crypto?.randomUUID ? `${prefix}-${globalThis.crypto.randomUUID()}` : `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-export function createReportSettings({ container, state, onChange = () => {}, onRequeryZoning = () => {} }) {
+export function createReportSettings({ container, state, onChange = () => {}, onRequeryZoning = () => {}, richNotes = false, noteTextSize = false }) {
   const id = `report-settings-${++settingsInstance}`;
   const radio = (name, value, label) => `<label class="radio-option"><input type="radio" name="${id}-${name}" data-option="${name}" value="${value}"${checked(state.displayOptions[name] === value)}><span>${label}</span></label>`;
   container.innerHTML = `<div class="settings-accordion">
@@ -100,6 +101,7 @@ export function createReportSettings({ container, state, onChange = () => {}, on
           <div class="layout-setting-row"><span>表格行距</span><div class="option-row compact-option-row">${radio("tableSpacing", "compact", "緊湊")}${radio("tableSpacing", "standard", "標準")}${radio("tableSpacing", "relaxed", "寬鬆")}</div></div>
           <div class="layout-setting-row"><span>段落間距</span><div class="option-row compact-option-row">${radio("sectionSpacing", "compact", "緊湊")}${radio("sectionSpacing", "standard", "標準")}${radio("sectionSpacing", "relaxed", "寬鬆")}</div></div>
           <div class="layout-setting-row"><span>字體大小</span><div class="option-row compact-option-row">${radio("fontSize", "small", "小")}${radio("fontSize", "medium", "中")}${radio("fontSize", "large", "大")}</div></div>
+          ${noteTextSize ? `<div class="layout-setting-row"><span>備註文字大小</span><div class="option-row compact-option-row">${radio("noteTextSize", "small", "小")}${radio("noteTextSize", "medium", "中")}${radio("noteTextSize", "large", "大")}</div></div>` : ""}
         </div>
       </div>
     </div>
@@ -110,24 +112,47 @@ export function createReportSettings({ container, state, onChange = () => {}, on
   const notesList = container.querySelector("[data-custom-notes-list]");
   const noticesList = container.querySelector("[data-custom-notices-list]");
   const autoGrow = (textarea) => { textarea.style.height = "auto"; textarea.style.height = `${Math.min(180, Math.max(88, textarea.scrollHeight))}px`; };
+  const contentEditor = (type) => richNotes
+    ? `<div class="field"><span>內容</span><div data-${type}-editor></div></div>`
+    : `<label class="field"><span>內容</span><textarea data-${type}-content rows="3"></textarea></label>`;
   const renderCustomNotes = () => {
     notesList.innerHTML = (state.customNotes ?? []).map((note) => `<article class="custom-note-item" data-custom-note-id="${note.id}">
       <label class="check-option"><input data-custom-note-enabled type="checkbox"${checked(note.enabled !== false)}><span>顯示</span></label>
       <label class="field"><span>標題（選填）</span><input data-custom-note-title type="text" value="${escapeHtml(note.title)}"></label>
-      <label class="field"><span>內容</span><textarea data-custom-note-content rows="3">${escapeHtml(note.content)}</textarea></label>
+      ${contentEditor("custom-note")}
       <div class="custom-note-actions"><button class="text-button" data-remove-custom-note type="button">刪除</button></div>
     </article>`).join("");
-    notesList.querySelectorAll("textarea").forEach(autoGrow);
+    if (richNotes) {
+      for (const item of notesList.querySelectorAll("[data-custom-note-id]")) {
+        const note = state.customNotes.find((entry) => entry.id === item.dataset.customNoteId);
+        mountNoteEditor({ host: item.querySelector("[data-custom-note-editor]"), note, onChange });
+      }
+    } else {
+      notesList.querySelectorAll("[data-custom-note-content]").forEach((textarea) => {
+        const note = state.customNotes.find((entry) => entry.id === textarea.closest("[data-custom-note-id]").dataset.customNoteId);
+        textarea.value = note?.content ?? ""; autoGrow(textarea);
+      });
+    }
   };
   renderCustomNotes();
   const renderCustomNotices = () => {
     noticesList.innerHTML = (state.customNotices ?? []).map((notice) => `<article class="custom-note-item" data-custom-notice-id="${notice.id}">
       <label class="check-option"><input data-custom-notice-enabled type="checkbox"${checked(notice.enabled !== false)}><span>顯示</span></label>
       <label class="field"><span>標題</span><input data-custom-notice-title type="text" value="${escapeHtml(notice.title)}"></label>
-      <label class="field"><span>內容</span><textarea data-custom-notice-content rows="3">${escapeHtml(notice.content)}</textarea></label>
+      ${contentEditor("custom-notice")}
       <div class="custom-note-actions"><button class="text-button" data-remove-custom-notice type="button">刪除</button></div>
     </article>`).join("");
-    noticesList.querySelectorAll("textarea").forEach(autoGrow);
+    if (richNotes) {
+      for (const item of noticesList.querySelectorAll("[data-custom-notice-id]")) {
+        const notice = state.customNotices.find((entry) => entry.id === item.dataset.customNoticeId);
+        mountNoteEditor({ host: item.querySelector("[data-custom-notice-editor]"), note: notice, onChange });
+      }
+    } else {
+      noticesList.querySelectorAll("[data-custom-notice-content]").forEach((textarea) => {
+        const notice = state.customNotices.find((entry) => entry.id === textarea.closest("[data-custom-notice-id]").dataset.customNoticeId);
+        textarea.value = notice?.content ?? ""; autoGrow(textarea);
+      });
+    }
   };
   renderCustomNotices();
   const sync = () => {
@@ -178,10 +203,10 @@ export function createReportSettings({ container, state, onChange = () => {}, on
   container.addEventListener("click", (event) => {
     if (event.target.matches("[data-requery-zoning]")) { onRequeryZoning(); return; }
     if (event.target.matches("[data-add-custom-note]")) {
-      state.customNotes ??= []; state.customNotes.push({ id: createItemId("note"), enabled: true, title: "", content: "" }); renderCustomNotes(); onChange(); return;
+      state.customNotes ??= []; state.customNotes.push({ id: createItemId("note"), enabled: true, title: "", content: "", ...(richNotes ? { contentDoc: createEmptyNoteDocument() } : {}) }); renderCustomNotes(); onChange(); return;
     }
     if (event.target.matches("[data-add-custom-notice]")) {
-      state.customNotices ??= []; state.customNotices.push({ id: createItemId("notice"), enabled: true, title: "", content: "" }); renderCustomNotices(); onChange(); return;
+      state.customNotices ??= []; state.customNotices.push({ id: createItemId("notice"), enabled: true, title: "", content: "", ...(richNotes ? { contentDoc: createEmptyNoteDocument() } : {}) }); renderCustomNotices(); onChange(); return;
     }
     if (event.target.matches("[data-remove-custom-notice]")) {
       const item = event.target.closest("[data-custom-notice-id]"); const notice = state.customNotices.find((entry) => entry.id === item.dataset.customNoticeId);

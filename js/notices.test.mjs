@@ -69,4 +69,16 @@ assert.deepEqual(saved.displayOptions.noticeItems, onlyOneAndThree.noticeItems);
 assert.deepEqual(saved.customNotices, customOnly, "CASE E: notice state survives case JSON serialization");
 assert.deepEqual(getVisibleNotices({ displayOptions: onlyOneAndThree, customNotices: customOnly }).map((item) => item.id), ["selfUseRequiresSale", "giftTaxDeduction", "notice-a"]);
 
+const richNoticeHtml = renderA4Report({ ...base, displayOptions: noFixed, customNotices: [{
+  id: "rich", enabled: true, title: "安全提醒", content: "• 第一項\n• 第二項", contentDoc: { version: 1, blocks: [{
+    type: "list", marker: "bullet", items: [
+      { runs: [{ text: "第一項", bold: true }] },
+      { runs: [{ text: "第二項", bold: false }] }
+    ]
+  }] }
+}] }, { richNotes: true }).html;
+assert.match(richNoticeHtml, /<span class="report-clause-title">安全提醒<\/span>/);
+assert.match(richNoticeHtml, /report-rich-list-bullet/);
+assert.match(richNoticeHtml, /<strong>第一項<\/strong>/);
+
 console.log("notice section regression: cases A-F passed");

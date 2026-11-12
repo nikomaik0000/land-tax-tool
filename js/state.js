@@ -3,6 +3,7 @@ import { loadSessionState } from "./session-state.js";
 import { migrateRelationshipState } from "./relationships.js";
 
 const reportConfiguration = createDefaultReportConfiguration();
+reportConfiguration.displayOptions.noteTextSize = "medium";
 export const LAND_TAX_STORAGE_KEY = "landTool.landTaxState";
 const restored = loadSessionState(LAND_TAX_STORAGE_KEY) ?? {};
 const defaultHouse = { address: "", assessedValue: null, shareNumerator: 1, shareDenominator: 1, currentValue: 0, deedTax: 0, annualHouseTax: "", reverseTaxRate: "", estimatedHouseValue: null };
@@ -33,6 +34,7 @@ Object.assign(state, restored, {
   selectedClauses: restored.selectedClauses ?? reportConfiguration.selectedClauses
 });
 state.customNotices = Array.isArray(restored.customNotices) ? restored.customNotices : reportConfiguration.customNotices;
+if (!["small", "medium", "large"].includes(state.displayOptions.noteTextSize)) state.displayOptions.noteTextSize = "medium";
 state.documentOrderMode = restored.documentOrderMode === "manual" ? "manual" : "auto";
 migrateRelationshipState(state);
 

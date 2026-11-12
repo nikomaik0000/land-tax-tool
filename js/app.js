@@ -4,9 +4,9 @@ import { parseLandTaxPdfDetailed } from "./pdf-parser.js?v=20260903-5";
 import { renderFiles, renderLandTable } from "./report-renderer.js?v=20260903-4";
 import { formatArea, formatLandNumber, formatMoney, parseFormattedNumber } from "./formatters.js?v=20260819-25";
 import { calculateCaseCurrentValue, calculateGiftTax, calculateHouseCurrentValue, calculateHouseOwnerDeedTax, calculateLandCurrentValue, calculateTransferCurrentValue, calculateTotalDeedTax, calculateTotalHouseCurrentValue, calculateTotalLandCurrentValue, calculateTransferTaxTotals } from "./calculations.js?v=20260903-2";
-import { renderA4Report } from "./a4-report-renderer.js?v=20261005-2";
+import { renderA4Report } from "./a4-report-renderer.js?v=20261112-2";
 import { exportExcel } from "./excel-export.js?v=20261005-1";
-import { createReportSettings } from "./report-settings.js?v=20261002-1";
+import { createReportSettings } from "./report-settings.js?v=20261111-2";
 import { createHouse, ensureOwner, hasEffectiveHouseData, houseLabel, ownerName } from "./relationships.js";
 import { orderLandsByDocuments, sortDocumentsByLand } from "./document-order.js";
 import { normalizeCity } from "./land-value-normalization.js";
@@ -56,16 +56,20 @@ export function serializeLandTaxCase() {
 
 export function restoreLandTaxCase(snapshot) {
   const restored = structuredClone(snapshot);
+  const restoredNoteTextSize = ["small", "medium", "large"].includes(restored.displayOptions?.noteTextSize) ? restored.displayOptions.noteTextSize : "medium";
   Object.assign(state, restored, {
     files: [],
     displayOptions: {
       ...state.displayOptions,
       ...(restored.displayOptions ?? {}),
       taxSummaryItems: { ...state.displayOptions.taxSummaryItems, ...(restored.displayOptions?.taxSummaryItems ?? {}) },
-      noticeItems: { ...state.displayOptions.noticeItems, ...(restored.displayOptions?.noticeItems ?? {}) }
+      noticeItems: { ...state.displayOptions.noticeItems, ...(restored.displayOptions?.noticeItems ?? {}) },
+      noteTextSize: restoredNoteTextSize
     },
+    customNotes: Array.isArray(restored.customNotes) ? restored.customNotes : [],
     customNotices: Array.isArray(restored.customNotices) ? restored.customNotices : []
   });
+  if (!["small", "medium", "large"].includes(state.displayOptions.noteTextSize)) state.displayOptions.noteTextSize = "medium";
   elements.caseName.value = state.caseName ?? "";
   restoredManualLandPrefix = [];
   settingsController?.syncCollections();
@@ -74,7 +78,7 @@ export function restoreLandTaxCase(snapshot) {
 }
 
 function renderPreview() {
-  const report = renderA4Report(state);
+  const report = renderA4Report(state, { richNotes: true });
   elements.a4Sheet.innerHTML = report.html;
   elements.a4Sheet.dataset.density = report.density;
   elements.a4Sheet.classList.toggle("orientation-portrait", state.displayOptions.orientation === "portrait");
@@ -85,6 +89,8 @@ function renderPreview() {
   elements.a4Sheet.classList.add(`section-spacing-${state.displayOptions.sectionSpacing}`);
   elements.a4Sheet.classList.remove("report-font-small", "report-font-medium", "report-font-large");
   elements.a4Sheet.classList.add(`report-font-${state.displayOptions.fontSize}`);
+  elements.a4Sheet.classList.remove("note-font-small", "note-font-medium", "note-font-large");
+  elements.a4Sheet.classList.add(`note-font-${["small", "medium", "large"].includes(state.displayOptions.noteTextSize) ? state.displayOptions.noteTextSize : "medium"}`);
   document.body.classList.toggle("print-portrait", state.displayOptions.orientation === "portrait");
   document.body.classList.toggle("print-landscape", state.displayOptions.orientation === "landscape");
   elements.dynamicPrintPage.textContent = `@page { size: A4 ${state.displayOptions.orientation}; margin: 10mm; }`;
@@ -504,6 +510,8 @@ let previousShowLandZoning = state.displayOptions.showLandZoning;
 settingsController = createReportSettings({
   container: elements.reportSettings,
   state,
+  richNotes: true,
+  noteTextSize: true,
   onChange: () => {
     const changed = previousShowLandZoning !== state.displayOptions.showLandZoning;
     previousShowLandZoning = state.displayOptions.showLandZoning;

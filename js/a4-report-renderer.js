@@ -7,6 +7,7 @@ import { getVisibleNotices } from "./notices.js";
 import { formatZoningForPrint, getVisiblePrintColumns } from "./zoning-print.js";
 import { normalizeDistrict } from "./land-value-normalization.js";
 import { getFinalTransferTaxes } from "./land-zoning.js";
+import { noteHasContent, renderNoteDocument } from "./note-editor.js?v=20261112-1";
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -189,21 +190,35 @@ function giftTaxDetail(result, hasLand) {
   </section>`;
 }
 
-function selectedClauseMarkup(selectedIds) {
+function plainNoteHeading(content) {
+  return `<div class="report-note-heading report-plain-note-heading"><span class="report-clause-title">${content}</span></div>`;
+}
+
+function selectedClauseMarkup(selectedIds, { richNotes = false } = {}) {
   return clauses.filter((clause) => selectedIds.includes(clause.id)).map((clause) => {
     if (clause.id === "selfUse") {
       return `<div class="report-clause report-clause-list">
-        <p class="report-clause-title">◆ ${escapeHtml(clause.title)}</p>
+        ${richNotes ? plainNoteHeading(escapeHtml(clause.title)) : `<p class="report-clause-title">◆ ${escapeHtml(clause.title)}</p>`}
         <div class="report-note-detail"><ol class="report-note-list">${clause.content.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol></div>
       </div>`;
     }
-    return `<div class="report-clause"><p>◆ ${escapeHtml(clause.content.join(""))}</p></div>`;
+    return richNotes
+      ? `<div class="report-clause">${renderNoteDocument(undefined, clause.content.join(""))}</div>`
+      : `<div class="report-clause"><p>◆ ${escapeHtml(clause.content.join(""))}</p></div>`;
   }).join("");
 }
 
-function customNotesMarkup(notes = []) {
-  return notes.filter((note) => note.enabled !== false && String(note.content ?? "").trim()).map((note) => {
+function customNotesMarkup(notes = [], { richNotes = false } = {}) {
+  return notes.filter((note) => note.enabled !== false && (richNotes ? noteHasContent(note) : String(note.content ?? "").trim())).map((note) => {
     const title = String(note.title ?? "").trim(); const content = String(note.content ?? "").trim();
+    if (richNotes) {
+      const body = renderNoteDocument(note.contentDoc, note.content);
+      if (!title) return `<div class="report-clause report-custom-note report-custom-note-titleless">${body}</div>`;
+      return `<div class="report-clause report-custom-note">
+        ${plainNoteHeading(`${escapeHtml(title)}：`)}
+        <div class="report-note-detail">${body}</div>
+      </div>`;
+    }
     if (!title) return `<div class="report-clause report-custom-note"><p>◆ ${escapeHtml(content)}</p></div>`;
     return `<div class="report-clause report-custom-note">
       <p class="report-clause-title">◆ ${escapeHtml(title)}：</p>
@@ -212,18 +227,23 @@ function customNotesMarkup(notes = []) {
   }).join("");
 }
 
-function noticesMarkup(state) {
+function noticesMarkup(state, { richNotes = false } = {}) {
   const notices = getVisibleNotices(state);
   if (!notices.length) return "";
   return `<ol class="report-notice-list">${notices.map((notice) => {
     if (notice.type === "fixed") return `<li>${escapeHtml(notice.text)}</li>`;
     const title = String(notice.title ?? "").trim(); const content = String(notice.content ?? "").trim();
+    if (richNotes) {
+      const body = noteHasContent(notice) ? renderNoteDocument(notice.contentDoc, notice.content) : "";
+      if (!title) return `<li class="report-custom-notice">${body}</li>`;
+      return `<li class="report-custom-notice"><span class="report-clause-title">${escapeHtml(title)}</span>${body ? `<div class="report-note-detail notice-custom-content">${body}</div>` : ""}</li>`;
+    }
     if (!title) return `<li class="report-custom-notice">${escapeHtml(content)}</li>`;
     return `<li class="report-custom-notice"><span class="report-clause-title">${escapeHtml(title)}</span>${content ? `<div class="report-note-detail notice-custom-content">${escapeHtml(content)}</div>` : ""}</li>`;
   }).join("")}</ol>`;
 }
 
-export function renderA4Report(state) {
+export function renderA4Report(state, { richNotes = false } = {}) {
   const { density, rowCount, warning } = getReportDensity(state);
   const totals = calculateTransferTaxTotals(state.lands);
   const showSelfUseTax = state.displayOptions.showSelfUseTax;
@@ -231,8 +251,8 @@ export function renderA4Report(state) {
   const giftColumnCount = giftResult ? giftTaxItems(giftResult, state.lands.length > 0).length : 0;
   const portraitGiftWarning = state.displayOptions.orientation === "portrait" && giftColumnCount > 8;
   const taxSummary = state.displayOptions.showTaxSummary ? taxSummaryMarkup(state, totals, giftResult) : "";
-  const noteMarkup = selectedClauseMarkup(state.selectedClauses) + customNotesMarkup(state.customNotes);
-  const noticeMarkup = noticesMarkup(state);
+  const noteMarkup = selectedClauseMarkup(state.selectedClauses, { richNotes }) + customNotesMarkup(state.customNotes, { richNotes });
+  const noticeMarkup = noticesMarkup(state, { richNotes });
   const columns = getVisiblePrintColumns(state.displayOptions);
 
   const html = `<div class="report-document density-${density}">

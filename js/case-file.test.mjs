@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { buildCaseFile, caseFilename, migrateSavedCase, parseCaseFile, sanitizeFilename, validateCaseFile } from "./case-file.js";
 
 const samples = {
-  "land-tax": { lands: [{ id: "l1", previousTransfers: [{ priceIndex: 123, generalTax: 9 }] }], owners: [{ id: "o1" }], displayOptions: { orientation: "landscape" }, documentOrderMode: "manual" },
+  "land-tax": { lands: [{ id: "l1", previousTransfers: [{ priceIndex: 123, generalTax: 9 }] }], owners: [{ id: "o1" }], displayOptions: { orientation: "landscape", noteTextSize: "large" }, documentOrderMode: "manual", customNotes: [{ id: "n1", title: "", content: "◆ 菱形", contentDoc: { version: 1, blocks: [{ type: "list", marker: "diamond", items: [{ runs: [{ text: "菱形", bold: true }] }] }] } }] },
   "tax-proration": { schemaVersion: 2, shared: { seller: "賣方", notes: [{ id: "n1", content: "備註" }] }, customer: { buyer: "買方" } },
   transcript: { lands: [{ zonings: ["住宅區"], previousTransfers: [{ priceIndex: 111, calculatedGeneralTax: 8 }] }], tryLandTax: true, displayOptions: { showLandZoning: true } },
   "land-value-update": { workbookRows: [["區", "地號"]], records: [{ status: "not-found" }], showOriginalValue: false },
