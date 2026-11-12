@@ -9,7 +9,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="css/style.css?v=20261022-1">
   <link rel="stylesheet" href="css/land-value-update.css?v=20260820-4">
-  <link rel="stylesheet" href="css/print.css?v=20261111-1">
+  <link rel="stylesheet" href="css/print.css?v=20261112-3">
 </head>
 <body>
   <main class="app-container">
@@ -86,6 +86,7 @@
       </div>
       <p id="actionMessage" class="validation-message" hidden aria-live="polite"></p>
       <fieldset class="print-settings"><legend>紙張方向</legend><label class="radio-option"><input name="landValuePrintOrientation" type="radio" value="portrait" checked><span>直向</span></label><label class="radio-option"><input name="landValuePrintOrientation" type="radio" value="landscape"><span>橫向</span></label></fieldset>
+      <fieldset class="print-settings"><legend>列印文字大小</legend><label class="radio-option"><input name="landValuePrintTextSize" type="radio" value="small"><span>小</span></label><label class="radio-option"><input name="landValuePrintTextSize" type="radio" value="medium" checked><span>中</span></label><label class="radio-option"><input name="landValuePrintTextSize" type="radio" value="large"><span>大</span></label></fieldset>
       <div class="actions result-actions">
         <button id="saveLandValueCase" class="btn btn-secondary" type="button">儲存案件</button>
         <button id="importLandValueCase" class="btn btn-secondary" type="button">導入案件</button>
@@ -97,6 +98,6 @@
   </main>
   <div id="landValuePrintReport" class="batch-report-host" aria-hidden="true"></div>
   <style id="landValuePrintPage">@page { size: A4 portrait; margin: 10mm; }</style>
-  <script src="js/land-value-update-app.js?v=20261111-1" type="module"></script>
+  <script src="js/land-value-update-app.js?v=20261112-1" type="module"></script>
 </body>
 </html>

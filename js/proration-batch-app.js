@@ -54,7 +54,7 @@ function groupsMarkup(fields, data, scope, source) {
   return groups.map(([title, matches]) => `<div class="settings-group"><h3>${title}${scope === "individual" ? "・個別覆寫" : "・共用預設"}</h3><div class="form-grid">${fields.filter(matches).map((field) => fieldMarkup(field, getField(data, field.path), scope, source)).join("")}</div></div>`).join("");
 }
 
-export function setupBatchWorkspace({ root, singleRoot, getSingleState, onShowSingle }) {
+export function setupBatchWorkspace({ root, singleRoot, getSingleState, onShowSingle, getPrintTextSize = () => "medium" }) {
   const workspace = createBatchWorkspace(), $ = (selector) => root.querySelector(selector);
   const singleButton = document.querySelector("#showSingleProration"), batchButton = document.querySelector("#showBatchProration");
   let editingId = null, busy = false;
@@ -231,9 +231,11 @@ export function setupBatchWorkspace({ root, singleRoot, getSingleState, onShowSi
       await new Promise((resolve) => requestAnimationFrame(resolve));
       const { pages, invalidSelected } = prepareBatchPrint(snapshot);
       if (!pages.length && !invalidSelected.length) throw new Error("請先勾選至少一戶資料正常的戶別。");
+      const requestedPrintTextSize = getPrintTextSize();
+      const printTextSize = ["small", "medium", "large"].includes(requestedPrintTextSize) ? requestedPrintTextSize : "medium";
       for (const page of pages) {
         const article = document.createElement("article");
-        article.className = "a4-sheet proration-a4-sheet orientation-portrait report-font-medium table-spacing-standard section-spacing-standard batch-report-document";
+        article.className = `a4-sheet proration-a4-sheet orientation-portrait report-font-${printTextSize} table-spacing-standard section-spacing-standard batch-report-document`;
         article.dataset.batchPrintId = page.id;
         article.setAttribute("aria-label", `${page.label} 分算找補報表`);
         article.innerHTML = page.html;
@@ -249,7 +251,7 @@ export function setupBatchWorkspace({ root, singleRoot, getSingleState, onShowSi
         let reason = "";
         if (range.getClientRects().length > 1 || title.scrollWidth > title.clientWidth + 1) reason = "標題超出 A4 單行寬度";
         else if (article.scrollWidth > article.clientWidth + 1 || [...article.querySelectorAll("table, .report-meta, .report-clause")].some((element) => element.scrollWidth > element.clientWidth + 1)) reason = "表格或文字超出 A4 頁面寬度";
-        else if (article.getBoundingClientRect().height > maxHeight + 1) reason = "內容超出一張 A4 的高度，請檢查備註或過長文字";
+        else if (article.getBoundingClientRect().height > maxHeight + 1) reason = `內容超出一張 A4 的高度（${printTextSize === "large" ? "大字級，" : ""}277mm 上限），請檢查備註或過長文字`;
         if (reason) { excluded.push(`${pages[index].label}：${reason}`); article.remove(); }
         else printable += 1;
       }

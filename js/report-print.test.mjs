@@ -54,3 +54,14 @@ test("shared printer uses a 10mm safe margin", () => {
   assert.equal(printer.sync(), true);
   assert.equal(pageStyle.textContent, "@page { size: A4 landscape; margin: 10mm; }");
 });
+
+test("shared printer applies only a normalized print text size class", () => {
+  const host = { innerHTML: "", className: "" }; const pageStyle = { textContent: "" };
+  const printer = createReportPrinter({
+    host, pageStyle, getOrientation: () => "portrait", getTextSize: () => "large",
+    getReport: () => ({ title: "驗證報表", columns: [{ label: "欄位", key: "value" }], rows: [{ value: "內容" }] }),
+    getRowCount: () => 1, onEmpty: () => {}
+  });
+  assert.equal(printer.sync(), true);
+  assert.match(host.className, /report-font-large/);
+});

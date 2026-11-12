@@ -15,12 +15,14 @@ export function renderReportShell({ title, metadata = [], columns, rows, wide = 
   </div>`;
 }
 
-export function createReportPrinter({ host, pageStyle, getOrientation, getReport, getRowCount, emptyMessage = "目前沒有可列印的查詢結果。", onEmpty = window.alert }) {
+export function createReportPrinter({ host, pageStyle, getOrientation, getTextSize = () => "medium", getReport, getRowCount, emptyMessage = "目前沒有可列印的查詢結果。", onEmpty = window.alert }) {
   function sync() {
     const hasRows = getRowCount() > 0;
     host.innerHTML = hasRows ? renderReportShell(getReport()) : "";
     const orientation = getOrientation();
-    host.className = `batch-report-host orientation-${orientation}${hasRows ? " is-print-ready" : ""}`;
+    const requestedTextSize = getTextSize();
+    const textSize = ["small", "medium", "large"].includes(requestedTextSize) ? requestedTextSize : "medium";
+    host.className = `batch-report-host orientation-${orientation} report-font-${textSize}${hasRows ? " is-print-ready" : ""}`;
     pageStyle.textContent = `@page { size: A4 ${orientation}; margin: 10mm; }`;
     return hasRows;
   }

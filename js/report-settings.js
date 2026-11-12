@@ -49,7 +49,7 @@ function checked(value) { return value ? " checked" : ""; }
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const createItemId = (prefix) => globalThis.crypto?.randomUUID ? `${prefix}-${globalThis.crypto.randomUUID()}` : `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-export function createReportSettings({ container, state, onChange = () => {}, onRequeryZoning = () => {}, richNotes = false, noteTextSize = false }) {
+export function createReportSettings({ container, state, onChange = () => {}, onRequeryZoning = () => {}, richNotes = false, noteTextSize = false, fontSizeLabel = "字體大小" }) {
   const id = `report-settings-${++settingsInstance}`;
   const radio = (name, value, label) => `<label class="radio-option"><input type="radio" name="${id}-${name}" data-option="${name}" value="${value}"${checked(state.displayOptions[name] === value)}><span>${label}</span></label>`;
   container.innerHTML = `<div class="settings-accordion">
@@ -100,7 +100,7 @@ export function createReportSettings({ container, state, onChange = () => {}, on
         <div class="settings-group"><h3>排版設定</h3>
           <div class="layout-setting-row"><span>表格行距</span><div class="option-row compact-option-row">${radio("tableSpacing", "compact", "緊湊")}${radio("tableSpacing", "standard", "標準")}${radio("tableSpacing", "relaxed", "寬鬆")}</div></div>
           <div class="layout-setting-row"><span>段落間距</span><div class="option-row compact-option-row">${radio("sectionSpacing", "compact", "緊湊")}${radio("sectionSpacing", "standard", "標準")}${radio("sectionSpacing", "relaxed", "寬鬆")}</div></div>
-          <div class="layout-setting-row"><span>字體大小</span><div class="option-row compact-option-row">${radio("fontSize", "small", "小")}${radio("fontSize", "medium", "中")}${radio("fontSize", "large", "大")}</div></div>
+          <div class="layout-setting-row"><span>${escapeHtml(fontSizeLabel)}</span><div class="option-row compact-option-row">${radio("fontSize", "small", "小")}${radio("fontSize", "medium", "中")}${radio("fontSize", "large", "大")}</div></div>
           ${noteTextSize ? `<div class="layout-setting-row"><span>備註文字大小</span><div class="option-row compact-option-row">${radio("noteTextSize", "small", "小")}${radio("noteTextSize", "medium", "中")}${radio("noteTextSize", "large", "大")}</div></div>` : ""}
         </div>
       </div>

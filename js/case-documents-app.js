@@ -22,12 +22,15 @@ import {
   prepareImportedFile,
   removeImportedFile,
 } from "./case-documents-import.js";
-import { preparePrintableCaseCard } from "./case-documents-print.js";
+import { findOversizedCaseCardRows, preparePrintableCaseCard } from "./case-documents-print.js";
 import { mountCaseAuthorizationWorkspace } from "./case-document-authorizations-app.js?v=20261027-3";
 import { mountCaseDocumentTabs } from "./case-document-tabs.js";
 import { caseCardPdfFilename, caseDataJsonFilename } from "./case-document-filenames.js?v=20261027-3";
+import { applyPrintTextSizeClass, loadPrintTextSize, savePrintTextSize } from "./print-text-size.js";
 
 const state = createCaseDocumentState();
+const CASE_CARD_PRINT_TEXT_SIZE_KEY = "landTool.caseCardPrintTextSize";
+let caseCardPrintTextSize = loadPrintTextSize(CASE_CARD_PRINT_TEXT_SIZE_KEY);
 let hasUnsavedChanges = false;
 const tabs = mountCaseDocumentTabs();
 const authorizationWorkspace = mountCaseAuthorizationWorkspace(state, document, globalThis.localStorage, { onCaseChange: markCaseDirty });
@@ -67,6 +70,7 @@ const elements = {
   importCase: document.querySelector("#importCaseDocuments"),
   clearCase: document.querySelector("#clearCaseDocuments"),
   caseFileStatus: document.querySelector("#caseFileStatus"),
+  printWarning: document.querySelector("#caseCardPrintWarning"),
 };
 
 bindCaseFields();
@@ -535,12 +539,21 @@ function syncBuildingMetaInputs() {
 
 function renderPreview() {
   elements.sheet.innerHTML = renderCaseCard(state);
+  applyPrintTextSizeClass(elements.sheet, caseCardPrintTextSize, "case-card-font");
   authorizationWorkspace.render();
-  requestAnimationFrame(scalePreview);
+  requestAnimationFrame(() => { validateCaseCardPrintRows(); scalePreview(); });
+}
+
+function validateCaseCardPrintRows() {
+  const oversized = findOversizedCaseCardRows(elements.sheet);
+  elements.printWarning.textContent = oversized.length ? `目前有 ${oversized.length} 列內容超出單頁可列印高度，請縮短該列內容或改用較小的列印文字大小。系統不會裁切或省略資料。` : "";
+  elements.printWarning.hidden = oversized.length === 0;
+  elements.printButton.disabled = oversized.length > 0;
+  return oversized.length === 0;
 }
 
 function bindPrint() {
-  const prepare = () => preparePrintableCaseCard(elements.printRoot, renderCaseCard(state));
+  const prepare = () => preparePrintableCaseCard(elements.printRoot, renderCaseCard(state), caseCardPrintTextSize);
   let titleBeforePrint = "";
   let titleChangedForPrint = false;
   const prepareTitle = () => {
@@ -555,6 +568,7 @@ function bindPrint() {
     titleChangedForPrint = false;
   };
   elements.printButton.addEventListener("click", () => {
+    if (!validateCaseCardPrintRows()) return;
     prepare();
     prepareTitle();
     requestAnimationFrame(() => window.print());
@@ -562,6 +576,15 @@ function bindPrint() {
   window.addEventListener("beforeprint", () => { prepare(); prepareTitle(); });
   window.addEventListener("afterprint", () => { elements.printRoot.replaceChildren(); restoreTitle(); });
 }
+
+document.querySelectorAll('input[name="caseCardPrintTextSize"]').forEach((input) => {
+  input.checked = input.value === caseCardPrintTextSize;
+  input.addEventListener("change", () => {
+    caseCardPrintTextSize = savePrintTextSize(CASE_CARD_PRINT_TEXT_SIZE_KEY, input.value);
+    document.querySelectorAll('input[name="caseCardPrintTextSize"]').forEach((option) => { option.checked = option.value === caseCardPrintTextSize; });
+    renderPreview();
+  });
+});
 
 function scalePreview() {
   elements.sheet.style.transform = "none";

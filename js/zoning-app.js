@@ -3,10 +3,13 @@ import { normalizeCity } from "./land-value-normalization.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
 import { parseZoningWorkbookRecords } from "./zoning-core.js";
 import { loadTaipeiZoningManifest, lookupZoningRecords } from "./zoning-source.js";
-import { createReportPrinter, formatReportDate } from "./report-print.js?v=20261111-1";
+import { createReportPrinter, formatReportDate } from "./report-print.js?v=20261112-1";
 import { setupCaseFileActions } from "./case-file.js";
+import { loadPrintTextSize, savePrintTextSize } from "./print-text-size.js";
 
 const STORAGE_KEY = "landTool.zoningState";
+const PRINT_TEXT_SIZE_KEY = "landTool.zoningPrintTextSize";
+let zoningPrintTextSize = loadPrintTextSize(PRINT_TEXT_SIZE_KEY);
 const XLSX_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 const restored = loadSessionState(STORAGE_KEY) ?? {};
 let xlsxPromise;
@@ -35,6 +38,7 @@ function expanded() { return records.flatMap((record) => (record.matches?.length
 const zoningPrinter = createReportPrinter({
   host: $("#zoningPrintReport"), pageStyle: $("#zoningPrintPage"),
   getOrientation: () => document.querySelector('input[name="zoningPrintOrientation"]:checked')?.value ?? "landscape",
+  getTextSize: () => zoningPrintTextSize,
   getRowCount: () => expanded().length,
   getReport: () => ({ title: "土地使用分區查詢結果", wide: true, metadata: [{ label: "產生日期", value: formatReportDate() }], rows: expanded(), columns: [
     { label: "縣市", value: ({ record }) => record.city }, { label: "區", value: ({ record }) => record.district ? `${record.district}區` : "" }, { label: "段", value: ({ record }) => record.section ? `${record.section}段` : "" }, { label: "小段", value: ({ record }) => record.subsection ? `${record.subsection}小段` : "" }, { label: "地號", value: ({ record }) => formatLandNumber(record.landNumber) }, { label: "土地類型", value: ({ result }) => result?.landType ?? "" }, { label: "使用分區", value: ({ result }) => result?.zoning ?? "", className: "report-long-text" }, { label: "使用地類別", value: ({ result }) => result?.landUse ?? "" }, { label: "查詢狀態", value: ({ record }) => statusText[record.status] }
@@ -73,6 +77,10 @@ function formatManifestDate(manifest) { const value = manifest.sourceUpdatedAt ?
 $("#fallbackCity").value = restored.fallbackCity === "新北市" ? "新北市" : "臺北市"; $("#fallbackCity").addEventListener("change", saveState);
 const restoredZoningOrientation = document.querySelector(`input[name="zoningPrintOrientation"][value="${restored.orientation}"]`); if (restoredZoningOrientation) restoredZoningOrientation.checked = true;
 document.querySelectorAll('input[name="zoningPrintOrientation"]').forEach((input) => input.addEventListener("change", saveState));
+document.querySelectorAll('input[name="zoningPrintTextSize"]').forEach((input) => {
+  input.checked = input.value === zoningPrintTextSize;
+  input.addEventListener("change", () => { zoningPrintTextSize = savePrintTextSize(PRINT_TEXT_SIZE_KEY, input.value); });
+});
 setupCaseFileActions({ pageType: "zoning", label: "使用分區查詢", saveButton: $("#saveZoningCase"), importButton: $("#importZoningCase"), serialize: serializeZoningCase, restore: restoreZoningCase, hasData: () => records.length > 0, caseName: () => fileName.replace(/\.(?:xls|xlsx)$/i, "") });
 $("#zoningSourceAccordion").addEventListener("click", () => { const open = $("#zoningSourceAccordion").getAttribute("aria-expanded") !== "true"; $("#zoningSourceAccordion").setAttribute("aria-expanded", String(open)); $("#zoningSourceContent").hidden = !open; });
 $("#zoningFile").addEventListener("change", (event) => { handle(event.target.files[0]); event.target.value = ""; }); $("#zoningDropZone").addEventListener("dragover", (event) => event.preventDefault()); $("#zoningDropZone").addEventListener("drop", (event) => { event.preventDefault(); handle(event.dataTransfer.files[0]); });

@@ -15,6 +15,17 @@ test("案件資料卡提供列印入口及獨立列印容器", () => {
   assert.match(app, /beforeprint/);
 });
 
+test("案件資料卡預覽與列印副本共用列印文字大小且會攔截超高單列", () => {
+  assert.match(html, /name="caseCardPrintTextSize"/);
+  assert.match(app, /caseCardPrintTextSize/);
+  assert.match(printHelper, /applyPrintTextSizeClass\(root\.firstElementChild, textSize, "case-card-font"\)/);
+  assert.match(printHelper, /findOversizedCaseCardRows/);
+  assert.match(app, /系統不會裁切或省略資料/);
+  assert.match(css, /\.case-card-font-small \{ --case-card-base-size: 7\.5pt;/);
+  assert.match(css, /\.case-card-font-medium \{ --case-card-base-size: 8pt;/);
+  assert.match(css, /\.case-card-font-large \{ --case-card-base-size: 9pt;/);
+});
+
 test("列印固定 A4 直式並允許表格自動分頁與重複表頭", () => {
   assert.match(css, /@page \{ size: A4 portrait; margin: 12mm 10mm 14mm; \}/);
   assert.match(css, /\.case-card-table thead \{ display: table-header-group; \}/);
@@ -56,6 +67,6 @@ test("英文副標移除且共有部分維持次層標題", () => {
   assert.doesNotMatch(model, /CASE FILE|case-card-kicker/);
   assert.doesNotMatch(css, /case-card-kicker/);
   assert.match(css, /\.common-part-block \{ margin-top: 2mm; \}/);
-  assert.match(css, /\.common-part-block h4 \{[^}]*font-size: 8pt;[^}]*font-weight: 600;[^}]*letter-spacing: 0\.03em;/s);
-  assert.match(css, /\.common-card-table \{ font-size: 7pt; \}/);
+  assert.match(css, /\.common-part-block h4 \{[^}]*font-size: var\(--case-card-subtitle-size, 8pt\);[^}]*font-weight: 600;[^}]*letter-spacing: 0\.03em;/s);
+  assert.match(css, /\.common-card-table \{ font-size: var\(--case-card-dense-table-size, 7pt\); \}/);
 });

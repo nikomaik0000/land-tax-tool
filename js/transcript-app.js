@@ -13,11 +13,13 @@ import { loadTaipeiZoningManifest, lookupZoningRecords } from "./zoning-source.j
 import { applyLandZoningResults, getFinalTransferTaxes, isPublicFacilityLand, setManualLandZoning } from "./land-zoning.js";
 import { normalizeTranscriptZoningRecord } from "./transcript-zoning.js";
 import { setupCaseFileActions } from "./case-file.js";
+import { loadPrintTextSize, savePrintTextSize } from "./print-text-size.js";
 
 const now = new Date();
 const defaultCalculationDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
 const TRANSCRIPT_STORAGE_KEY = "landTool.transcriptState";
+const TRANSCRIPT_PRINT_TEXT_SIZE_KEY = "landTool.transcriptPrintTextSize";
 const transcriptDefaults = {
   file: null, lands: [], parseMeta: {}, tryLandTax: false,
   cpiFile: null, cpiData: null, cpiStatus: "idle", cpiMessage: "", cpiSource: { status: "idle", type: null, sourceName: "", loadedAt: null }, calculationDate: defaultCalculationDate, status: "idle", error: "",
@@ -41,6 +43,7 @@ export const transcriptState = {
   giftTax: { ...transcriptDefaults.giftTax, ...(restoredTranscript.giftTax ?? {}) }
 };
 migrateRelationshipState(transcriptState);
+transcriptState.displayOptions.fontSize = loadPrintTextSize(TRANSCRIPT_PRINT_TEXT_SIZE_KEY, transcriptState.displayOptions.fontSize);
 
 const elements = {
   uploadZone: document.querySelector("#transcriptUploadZone"), fileInput: document.querySelector("#transcriptPdfFile"),
@@ -77,6 +80,7 @@ export function restoreTranscriptCase(snapshot) {
   const restored = structuredClone(snapshot);
   if (restored.cpiData) restored.cpiData = { ...restored.cpiData, values: new Map(restored.cpiData.values ?? []), monthColumns: new Map(restored.cpiData.monthColumns ?? []) };
   Object.assign(transcriptState, restored, { file: null, cpiFile: null, status: restored.lands?.length ? "ready" : "idle" });
+  transcriptState.displayOptions.fontSize = loadPrintTextSize(TRANSCRIPT_PRINT_TEXT_SIZE_KEY, transcriptState.displayOptions?.fontSize);
   elements.enableTax.checked = transcriptState.tryLandTax;
   elements.enableZoning.checked = transcriptState.displayOptions.showLandZoning;
   elements.cpiBlock.hidden = !transcriptState.tryLandTax;
@@ -431,7 +435,8 @@ elements.rows.addEventListener("click", (event) => {
   transcriptState.lands = transcriptState.lands.filter((land) => land.id !== button.dataset.landId); renderRows();
 });
 
-settingsController = createReportSettings({ container: elements.settings, state: transcriptState, onChange: () => {
+settingsController = createReportSettings({ container: elements.settings, state: transcriptState, fontSizeLabel: "列印文字大小", onChange: () => {
+  savePrintTextSize(TRANSCRIPT_PRINT_TEXT_SIZE_KEY, transcriptState.displayOptions.fontSize);
   elements.enableZoning.checked = transcriptState.displayOptions.showLandZoning;
   renderRows();
   if (transcriptState.displayOptions.showLandZoning) void lookupTranscriptZoning();

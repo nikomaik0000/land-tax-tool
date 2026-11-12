@@ -3,10 +3,13 @@ import { normalizeCity, normalizeDistrict } from "./land-value-normalization.js"
 import { applyLookup, createDistrictLookup, detectLandNumberHeaderRow, expandResultRows, parseWorkbookRecords } from "./land-number-converter-core.js";
 import { LAND_NUMBER_SOURCES, getLandNumberSourceByCity } from "./land-number-sources.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
-import { createReportPrinter, formatReportDate } from "./report-print.js?v=20261111-1";
+import { createReportPrinter, formatReportDate } from "./report-print.js?v=20261112-1";
+import { loadPrintTextSize, savePrintTextSize } from "./print-text-size.js";
 import { setupCaseFileActions } from "./case-file.js";
 
 const STORAGE_KEY = "landTool.landNumberConverterState";
+const PRINT_TEXT_SIZE_KEY = "landTool.landNumberPrintTextSize";
+let converterPrintTextSize = loadPrintTextSize(PRINT_TEXT_SIZE_KEY);
 const SHEETJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 const restored = loadSessionState(STORAGE_KEY) ?? {};
 const state = {
@@ -34,6 +37,7 @@ const displaySection = (value, suffix) => value ? `${value}${suffix}` : "";
 const converterPrinter = createReportPrinter({
   host: document.querySelector("#converterPrintReport"), pageStyle: document.querySelector("#converterPrintPage"),
   getOrientation: () => document.querySelector('input[name="converterPrintOrientation"]:checked')?.value ?? "landscape",
+  getTextSize: () => converterPrintTextSize,
   getRowCount: () => expandResultRows(state.records, state.direction).length,
   getReport: () => {
     const target = state.direction === "old-to-new" ? "新" : "舊";
@@ -236,6 +240,10 @@ document.querySelectorAll('input[name="selectedCity"]').forEach((input) => {
 });
 const restoredConverterOrientation = document.querySelector(`input[name="converterPrintOrientation"][value="${restored.orientation}"]`); if (restoredConverterOrientation) restoredConverterOrientation.checked = true;
 document.querySelectorAll('input[name="converterPrintOrientation"]').forEach((input) => input.addEventListener("change", savePageState));
+document.querySelectorAll('input[name="converterPrintTextSize"]').forEach((input) => {
+  input.checked = input.value === converterPrintTextSize;
+  input.addEventListener("change", () => { converterPrintTextSize = savePrintTextSize(PRINT_TEXT_SIZE_KEY, input.value); });
+});
 setupDropZone(elements.dropZone, handleQueryFile);
 setupCaseFileActions({ pageType: "land-number-converter", label: "新舊地號查詢", saveButton: elements.saveCase, importButton: elements.importCase, serialize: serializeLandNumberCase, restore: restoreLandNumberCase, hasData: () => state.records.length > 0, caseName: () => state.queryFileName.replace(/\.(?:xls|xlsx)$/i, "") });
 elements.fileInput.addEventListener("change", (event) => { handleQueryFile(event.target.files[0]); event.target.value = ""; });

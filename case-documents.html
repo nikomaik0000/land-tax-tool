@@ -8,7 +8,7 @@
   <link rel="apple-touch-icon" href="./icon/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="css/style.css?v=20261022-1">
-  <link rel="stylesheet" href="css/case-documents.css?v=20261022-2">
+  <link rel="stylesheet" href="css/case-documents.css?v=20261112-1">
   <link rel="stylesheet" href="css/case-document-authorizations.css?v=20261021-2">
   <link rel="stylesheet" href="css/real-price-filing.css?v=20261022-1">
 </head>
@@ -305,9 +305,11 @@
         <div><h2 id="case-preview-title">A4 資料卡預覽</h2><p>依目前資料即時更新；列印時會使用 A4 直式並依內容自動分頁。</p></div>
         <button id="printCaseCard" class="btn btn-primary" type="button">列印／另存 PDF</button>
       </div>
+      <fieldset class="print-settings preview-print-settings"><legend>列印文字大小</legend><label class="radio-option"><input name="caseCardPrintTextSize" type="radio" value="small"><span>小</span></label><label class="radio-option"><input name="caseCardPrintTextSize" type="radio" value="medium" checked><span>中</span></label><label class="radio-option"><input name="caseCardPrintTextSize" type="radio" value="large"><span>大</span></label></fieldset>
+      <p id="caseCardPrintWarning" class="report-warning" role="alert" hidden></p>
       <div class="report-preview case-card-preview">
         <div id="caseCardViewport" class="a4-preview-viewport case-card-viewport">
-          <article id="caseCardSheet" class="a4-sheet orientation-portrait case-card-sheet" aria-label="案件資料卡預覽"></article>
+          <article id="caseCardSheet" class="a4-sheet orientation-portrait case-card-sheet case-card-font-medium" aria-label="案件資料卡預覽"></article>
         </div>
       </div>
     </section>
@@ -319,6 +321,6 @@
 
   <script src="vendor/pdf/pdf-lib.min.js?v=1.17.1"></script>
   <script src="vendor/pdf/fontkit.umd.min.js?v=1.1.1"></script>
-  <script src="js/case-documents-app.js?v=20261027-3" type="module"></script>
+  <script src="js/case-documents-app.js?v=20261112-1" type="module"></script>
 </body>
 </html>

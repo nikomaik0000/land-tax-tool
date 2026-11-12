@@ -1,4 +1,4 @@
-import { setupBatchWorkspace } from "./proration-batch-app.js?v=20261111-1";
+import { setupBatchWorkspace } from "./proration-batch-app.js?v=20261112-1";
 import { setupCaseFileActions } from "./case-file.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
 import { formatMoney, parseFormattedNumber } from "./formatters.js";
@@ -6,14 +6,25 @@ import { calculateCombinedSettlement, calculateHouseTax, calculateLandTax, settl
 import { renderProrationReport } from "./proration-report.js?v=20261015-1";
 import { exportProrationExcel } from "./proration-excel.js?v=20261015-1";
 import { normalizeProrationState } from "./proration-state.js?v=20261001-1";
+import { applyPrintTextSizeClass, loadPrintTextSize, savePrintTextSize } from "./print-text-size.js";
 
 const STORAGE_KEY = "landTool.prorationState";
+const SINGLE_PRINT_TEXT_SIZE_KEY = "landTool.prorationSinglePrintTextSize";
+const BATCH_PRINT_TEXT_SIZE_KEY = "landTool.prorationBatchPrintTextSize";
 const createId = () => globalThis.crypto?.randomUUID?.() ?? `note-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const singleRoot = document.querySelector("#singleProrationWorkspace");
 const $ = (selector) => singleRoot.querySelector(selector);
 let state = normalizeProrationState(loadSessionState(STORAGE_KEY));
 let clearing = false;
 let validationRequested = false;
+let singlePrintTextSize = loadPrintTextSize(SINGLE_PRINT_TEXT_SIZE_KEY);
+let batchPrintTextSize = loadPrintTextSize(BATCH_PRINT_TEXT_SIZE_KEY);
+
+function syncPrintTextSizeControls() {
+  document.querySelectorAll('input[name="singleProrationPrintTextSize"]').forEach((input) => { input.checked = input.value === singlePrintTextSize; });
+  document.querySelectorAll('input[name="batchProrationPrintTextSize"]').forEach((input) => { input.checked = input.value === batchPrintTextSize; });
+  applyPrintTextSizeClass($("#a4Sheet"), singlePrintTextSize);
+}
 
 export function serializeProrationCase() { return structuredClone(state); }
 export function restoreProrationCase(snapshot) { state = normalizeProrationState(snapshot); validationRequested = false; syncInputs(); renderNotes(); refresh(); }
@@ -102,4 +113,12 @@ $("#downloadExcel").addEventListener("click", async () => { const button = $("#d
 function updatePreviewScale() { const sheet = $("#a4Sheet"); const preview = $("#reportPreview"); const viewport = $("#a4PreviewViewport"); const width = 210 * 96 / 25.4; const height = 297 * 96 / 25.4; const style = getComputedStyle(preview); const available = Math.max(0, preview.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)); const scale = Math.min(1, available / width); sheet.style.transform = `scale(${scale})`; viewport.style.width = `${width * scale}px`; viewport.style.height = `${Math.max(height, sheet.scrollHeight) * scale}px`; }
 new ResizeObserver(updatePreviewScale).observe($("#reportPreview")); window.addEventListener("pagehide", save); syncInputs(); renderNotes(); refresh();
 
-setupBatchWorkspace({ root: document.querySelector("#batchProrationWorkspace"), singleRoot, getSingleState: serializeProrationCase, onShowSingle: updatePreviewScale });
+document.querySelectorAll('input[name="singleProrationPrintTextSize"]').forEach((input) => input.addEventListener("change", () => {
+  singlePrintTextSize = savePrintTextSize(SINGLE_PRINT_TEXT_SIZE_KEY, input.value); syncPrintTextSizeControls(); updatePreviewScale();
+}));
+document.querySelectorAll('input[name="batchProrationPrintTextSize"]').forEach((input) => input.addEventListener("change", () => {
+  batchPrintTextSize = savePrintTextSize(BATCH_PRINT_TEXT_SIZE_KEY, input.value); syncPrintTextSizeControls();
+}));
+syncPrintTextSizeControls();
+
+setupBatchWorkspace({ root: document.querySelector("#batchProrationWorkspace"), singleRoot, getSingleState: serializeProrationCase, onShowSingle: updatePreviewScale, getPrintTextSize: () => batchPrintTextSize });

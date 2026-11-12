@@ -1,7 +1,14 @@
-export function preparePrintableCaseCard(root, cardHtml) {
+import { applyPrintTextSizeClass } from "./print-text-size.js";
+
+export function preparePrintableCaseCard(root, cardHtml, textSize = "medium") {
   root.innerHTML = `<article class="case-card-sheet case-card-print-sheet" aria-label="案件資料卡列印版">${cardHtml}</article>`;
+  applyPrintTextSizeClass(root.firstElementChild, textSize, "case-card-font");
   expandPrintRowspans(root);
   return root.firstElementChild;
+}
+
+export function findOversizedCaseCardRows(root, maximumHeight = 271 * 96 / 25.4) {
+  return [...root.querySelectorAll(".case-card-table tr")].filter((row) => row.offsetHeight > maximumHeight + 1);
 }
 
 export function expandPrintRowspans(root) {

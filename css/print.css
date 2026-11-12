@@ -23,6 +23,8 @@
   --report-note-size: 9.75px;
   --report-title-size: 22px;
   --report-tax-size: 12px;
+  --report-section-title-size: 11px;
+  --report-subtitle-size: 12px;
   color: var(--print-dark); font-size: var(--report-table-size); line-height: 1.4;
 }
 .table-spacing-compact .report-document { --base-report-cell-padding-y: 6px; --report-table-line-height: 1.25; }
@@ -31,9 +33,9 @@
 .section-spacing-compact .report-document { --base-section-gap: 3mm; --base-header-gap: 3.5mm; --base-meta-gap: 1.5mm; --base-clause-pad: 1mm; --base-clause-line-height: 1.5; }
 .section-spacing-standard .report-document { --base-section-gap: 4mm; --base-header-gap: 4.5mm; --base-meta-gap: 2mm; --base-clause-pad: 1.4mm; --base-clause-line-height: 1.6; }
 .section-spacing-relaxed .report-document { --base-section-gap: 8mm; --base-header-gap: 9mm; --base-meta-gap: 2.75mm; --base-clause-pad: 2.8mm; --base-clause-line-height: 1.75; }
-.report-font-small .report-document { --report-table-size: 9.5px; --report-note-size: 9px; --report-title-size: 21px; --report-tax-size: 11px; }
-.report-font-medium .report-document { --report-table-size: 10.25px; --report-note-size: 9.75px; --report-title-size: 22px; --report-tax-size: 12px; }
-.report-font-large .report-document { --report-table-size: 11.25px; --report-note-size: 10.75px; --report-title-size: 24px; --report-tax-size: 13px; }
+.report-font-small .report-document { --report-table-size: 9.5px; --report-note-size: 9px; --report-title-size: 21px; --report-tax-size: 11px; --report-section-title-size: 10.5px; --report-subtitle-size: 11px; }
+.report-font-medium .report-document { --report-table-size: 10.25px; --report-note-size: 9.75px; --report-title-size: 22px; --report-tax-size: 12px; --report-section-title-size: 11px; --report-subtitle-size: 12px; }
+.report-font-large .report-document { --report-table-size: 11.25px; --report-note-size: 10.75px; --report-title-size: 24px; --report-tax-size: 13px; --report-section-title-size: 12.5px; --report-subtitle-size: 13px; }
 .report-header { margin-bottom: var(--header-gap); text-align: center; }
 .report-header h2 { margin: 0; color: var(--print-black); font-size: var(--report-title-size); font-weight: 600; letter-spacing: 0.08em; }
 .batch-report-host { display: none; }
@@ -41,13 +43,28 @@
 .batch-report-host.is-measuring .a4-sheet { width: 194mm; max-width: 194mm; height: auto; min-height: 0; margin: 0; padding: 0; transform: none !important; box-shadow: none; }
 #batchReportHost.is-measuring { width: 190mm; }
 #batchReportHost.is-measuring .a4-sheet { width: 190mm; max-width: 190mm; }
-.report-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 1mm 6mm; margin-top: 2mm; color: var(--print-dark); font-size: 9.75px; }
-.report-table { width: 100%; table-layout: fixed; border: 1.5px solid var(--print-black); border-collapse: collapse; color: var(--print-dark); font-size: 10px; line-height: 1.4; }
+.report-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 1mm 6mm; margin-top: 2mm; color: var(--print-dark); font-size: var(--report-note-size); }
+.report-table { width: 100%; table-layout: fixed; border: 1.5px solid var(--print-black); border-collapse: collapse; color: var(--print-dark); font-size: var(--report-table-size, 10px); line-height: 1.4; }
 .report-table th,
 .report-table td { padding: 2.2mm 1.4mm; border: 1px solid var(--print-line); background: var(--print-white); text-align: center; vertical-align: middle; overflow-wrap: anywhere; word-break: break-word; }
 .report-table th { color: var(--print-black); font-weight: 600; }
 .report-table .report-number { text-align: right; white-space: nowrap; }
 .report-table .report-long-text { width: 28%; text-align: left; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+#batchReportHost .report-font-small .report-document { --report-table-size: 9.25px; --report-note-size: 9px; --report-title-size: 21px; --report-tax-size: 11px; }
+#batchReportHost .report-font-medium .report-document { --report-table-size: 10.25px; --report-note-size: 9.75px; --report-title-size: 22px; --report-tax-size: 12px; }
+#batchReportHost .report-font-large .report-document { --report-table-size: 11px; --report-note-size: 10.5px; --report-title-size: 23px; --report-tax-size: 13px; }
+#landValuePrintReport.report-font-small .report-document { --report-table-size: 9px; --report-title-size: 21px; }
+#landValuePrintReport.report-font-medium .report-document { --report-table-size: 10px; --report-title-size: 22px; }
+#landValuePrintReport.report-font-large .report-document { --report-table-size: 11px; --report-title-size: 24px; }
+#converterPrintReport.report-font-small .report-document { --report-table-size: 8.75px; --report-title-size: 21px; }
+#converterPrintReport.report-font-medium .report-document { --report-table-size: 10px; --report-title-size: 22px; }
+#converterPrintReport.report-font-large .report-document { --report-table-size: 10.75px; --report-title-size: 24px; }
+#zoningPrintReport.report-font-small .report-document { --report-table-size: 9px; --report-title-size: 21px; }
+#zoningPrintReport.report-font-medium .report-document { --report-table-size: 10px; --report-title-size: 22px; }
+#zoningPrintReport.report-font-large .report-document { --report-table-size: 11px; --report-title-size: 24px; }
+#landValuePrintReport.report-font-large .report-number,
+#converterPrintReport.report-font-large .report-number,
+#zoningPrintReport.report-font-large .report-number { white-space: normal; overflow-wrap: anywhere; }
 .a4-land-table { width: 100%; table-layout: fixed; border: 1.5px solid var(--print-black); border-collapse: collapse; }
 .a4-land-table th,
 .a4-land-table td { padding: var(--report-cell-padding-y) 5px; border: 1px solid var(--print-line); overflow-wrap: anywhere; text-align: center; vertical-align: middle; line-height: var(--report-table-line-height); }
@@ -97,7 +114,7 @@
 .orientation-landscape .a4-land-table .r-zoning { width: 13%; }
 .orientation-landscape .a4-land-table .r-tax { width: 10%; }
 .report-section { margin-top: var(--section-gap); }
-.report-section h3 { margin: 0 0 calc(var(--section-gap) * 0.35); padding-bottom: 1mm; border-bottom: 1.5px solid var(--print-black); color: var(--print-black); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+.report-section h3 { margin: 0 0 calc(var(--section-gap) * 0.35); padding-bottom: 1mm; border-bottom: 1.5px solid var(--print-black); color: var(--print-black); font-size: var(--report-section-title-size); font-weight: 600; letter-spacing: 0.04em; }
 .report-gift-tax-section h3,
 .report-tax-section h3 { padding-bottom: 0; border-bottom: 0; }
 .report-tax-summary { display: grid; border: 0; outline: 1.5px solid var(--print-black); outline-offset: -1.5px; }
@@ -202,7 +219,7 @@
 .proration-basis-table small { color: var(--print-dark); font-size: 0.85em; }
 .proration-section { margin-top: calc(var(--section-gap) * 1.75); }
 .proration-report-heading { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: calc(var(--section-gap) * 0.45); }
-.report-section .proration-section-title { margin-bottom: calc(var(--section-gap) * 0.45); padding-bottom: 0; border-bottom: 0; font-size: 12px; letter-spacing: 0.075em; }
+.report-section .proration-section-title { margin-bottom: calc(var(--section-gap) * 0.45); padding-bottom: 0; border-bottom: 0; font-size: var(--report-subtitle-size); letter-spacing: 0.075em; }
 .proration-report-heading .proration-section-title { margin-bottom: 0; }
 .proration-report-heading span { color: var(--print-dark); font-size: var(--report-note-size); }
 .proration-report-table { margin-top: 0; }
@@ -224,6 +241,7 @@
   .site-header,
   .section:not(.preview-section),
   .preview-heading,
+  .preview-print-settings,
   .report-warning { display: none !important; }
   .app-container { max-width: none; margin: 0; padding: 0; }
   .preview-section { margin: 0; }

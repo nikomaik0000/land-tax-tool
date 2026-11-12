@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>地價稅房屋稅 分算找補</title>
   <link rel="icon" href="./icon/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="./icon/apple-touch-icon.png"><link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="css/style.css?v=20261022-1"><link rel="stylesheet" href="css/print.css?v=20261111-1">
+  <link rel="stylesheet" href="css/style.css?v=20261022-1"><link rel="stylesheet" href="css/print.css?v=20261112-3">
 </head>
 <body><main class="app-container">
   <header class="site-header"><p class="eyebrow">LAND TAX TOOL</p><h1>地價稅房屋稅 分算找補</h1>
@@ -42,6 +42,7 @@
   <section class="section"><div class="section-heading section-heading-inline"><div><h2>其他備註</h2><p>可新增多筆案件備註；編號會依目前順序自動排列。</p></div><button id="addNote" class="btn btn-secondary" type="button">＋ 新增其他備註</button></div><div id="notesList" class="custom-notes-list"></div></section>
 
   <section class="section preview-section"><div class="section-heading section-heading-inline preview-heading"><div><h2>試算表預覽</h2><p>內容會隨案件資料與分算設定即時更新。</p></div><div class="preview-actions"><button id="saveCase" class="btn btn-secondary" type="button">儲存案件</button><button id="importCase" class="btn btn-secondary" type="button">導入案件</button><button id="clearPageState" class="btn btn-secondary" type="button">清除目前資料</button><button id="downloadExcel" class="btn btn-primary" type="button">下載 Excel</button><button id="printReport" class="btn btn-primary" type="button">列印 / 儲存 PDF</button></div></div>
+    <fieldset class="print-settings preview-print-settings"><legend>列印文字大小</legend><label class="radio-option"><input name="singleProrationPrintTextSize" type="radio" value="small"><span>小</span></label><label class="radio-option"><input name="singleProrationPrintTextSize" type="radio" value="medium" checked><span>中</span></label><label class="radio-option"><input name="singleProrationPrintTextSize" type="radio" value="large"><span>大</span></label></fieldset>
     <div id="reportPreview" class="report-preview"><div id="a4PreviewViewport" class="a4-preview-viewport"><article id="a4Sheet" class="a4-sheet proration-a4-sheet orientation-portrait report-font-medium table-spacing-standard section-spacing-standard" aria-label="地價稅房屋稅分算找補預覽"></article></div></div>
   </section>
   </div>
@@ -58,6 +59,7 @@
       <p class="proration-message">尚未儲存的批次資料在離開或重新整理後無法還原。</p>
     </section>
     <section id="batchPreview" class="section"><div class="section-heading section-heading-inline"><div><h2>批次預覽</h2><p id="batchSummary" role="status" aria-live="polite">共 0 戶 · 正常 0 戶 · 錯誤 0 戶 · 已勾選 0 戶</p></div><div class="preview-actions"><button id="batchSelectValid" class="btn btn-secondary" type="button" disabled>全選正常戶</button><button id="batchDeselectAll" class="btn btn-secondary" type="button" disabled>取消全選</button><button id="batchPrintSelected" class="btn btn-primary" type="button">列印勾選戶</button></div></div>
+      <fieldset class="print-settings"><legend>列印文字大小</legend><label class="radio-option"><input name="batchProrationPrintTextSize" type="radio" value="small"><span>小</span></label><label class="radio-option"><input name="batchProrationPrintTextSize" type="radio" value="medium" checked><span>中</span></label><label class="radio-option"><input name="batchProrationPrintTextSize" type="radio" value="large"><span>大</span></label></fieldset>
       <p id="batchPrintStatus" class="proration-message" role="status" aria-live="polite"></p>
       <div class="preview-actions"><button id="batchSaveCase" class="btn btn-secondary" type="button">儲存批次案件</button><button id="batchImportCase" class="btn btn-secondary" type="button">導入批次案件</button><input id="batchCaseFile" class="visually-hidden" type="file" accept=".json,application/json" aria-label="選擇批次案件 JSON"></div><p id="batchCaseStatus" class="proration-message" role="status" aria-live="polite"></p>
       <p id="batchEmpty" class="empty-state">上傳 Excel 後，會在這裡顯示逐戶結果。</p>
@@ -67,4 +69,4 @@
       <p id="batchEditorStatus" class="proration-message" role="status" aria-live="polite"></p><div id="batchEditorFields"></div><div id="batchUnmappedFields"></div>
     </section>
   </div>
-</main><div id="batchReportHost" class="batch-report-host" aria-hidden="true"></div><style>@page { size: A4 portrait; margin: 10mm; }</style><script src="js/proration-app.js?v=20261111-1" type="module"></script></body></html>
+</main><div id="batchReportHost" class="batch-report-host" aria-hidden="true"></div><style>@page { size: A4 portrait; margin: 10mm; }</style><script src="js/proration-app.js?v=20261112-1" type="module"></script></body></html>

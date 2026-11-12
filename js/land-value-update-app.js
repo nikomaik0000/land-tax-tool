@@ -2,8 +2,9 @@ import { formatArea, formatLandNumber, formatMoney, parseFormattedNumber } from 
 import { LAND_VALUE_DATA, LAND_VALUE_SOURCES, getLandValueSource } from "./land-value-sources.js";
 import { buildLandValueDiagnosticKey, buildLandValueKey, compareLandValueRecord, normalizeCity, normalizeLandValueRecord, splitSectionAndSubsection } from "./land-value-normalization.js";
 import { clearSessionState, loadSessionState, saveSessionState } from "./session-state.js";
-import { createReportPrinter, formatReportDate } from "./report-print.js?v=20261111-1";
+import { createReportPrinter, formatReportDate } from "./report-print.js?v=20261112-1";
 import { setupCaseFileActions } from "./case-file.js";
+import { loadPrintTextSize, savePrintTextSize } from "./print-text-size.js";
 
 const SHEETJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 const SOURCE_IDS = Object.keys(LAND_VALUE_SOURCES);
@@ -18,6 +19,8 @@ const HEADER_ALIASES = Object.freeze({
 });
 
 const LAND_VALUE_STORAGE_KEY = "landTool.landValueUpdateState";
+const LAND_VALUE_PRINT_TEXT_SIZE_KEY = "landTool.landValuePrintTextSize";
+let landValuePrintTextSize = loadPrintTextSize(LAND_VALUE_PRINT_TEXT_SIZE_KEY);
 const restoredState = loadSessionState(LAND_VALUE_STORAGE_KEY) ?? {};
 const state = {
   sources: Object.fromEntries(SOURCE_IDS.map((id) => [id, createEmptySourceState()])),
@@ -368,6 +371,7 @@ function statusLabel(status) {
 const landValuePrinter = createReportPrinter({
   host: document.querySelector("#landValuePrintReport"), pageStyle: document.querySelector("#landValuePrintPage"),
   getOrientation: () => document.querySelector('input[name="landValuePrintOrientation"]:checked')?.value ?? "portrait",
+  getTextSize: () => landValuePrintTextSize,
   getRowCount: () => state.records.length,
   getReport: () => ({ title: "公告現值查詢結果", metadata: [{ label: "產生日期", value: formatReportDate() }], rows: state.records, columns: [
     { label: "縣市", value: (record) => normalizeCity(record.city || state.fallbackCity) }, { label: "區", key: "district" }, { label: "段", key: "section" }, { label: "小段", key: "subsection" }, { label: "地號", value: (record) => formatLandNumber(record.landNumber) }, { label: "面積", value: (record) => formatArea(record.area) || "—", className: "report-number" },
@@ -482,6 +486,10 @@ elements.showOriginal.checked = state.showOriginalValue;
 elements.showOfficialPrice.checked = state.showOfficialPrice;
 const restoredLandValueOrientation = document.querySelector(`input[name="landValuePrintOrientation"][value="${restoredState.orientation}"]`); if (restoredLandValueOrientation) restoredLandValueOrientation.checked = true;
 document.querySelectorAll('input[name="landValuePrintOrientation"]').forEach((input) => input.addEventListener("change", savePageState));
+document.querySelectorAll('input[name="landValuePrintTextSize"]').forEach((input) => {
+  input.checked = input.value === landValuePrintTextSize;
+  input.addEventListener("change", () => { landValuePrintTextSize = savePrintTextSize(LAND_VALUE_PRINT_TEXT_SIZE_KEY, input.value); });
+});
 elements.showOriginal.addEventListener("change", () => { state.showOriginalValue = elements.showOriginal.checked; renderResults(); });
 elements.showOfficialPrice.addEventListener("change", () => { state.showOfficialPrice = elements.showOfficialPrice.checked; renderResults(); });
 setupCaseFileActions({ pageType: "land-value-update", label: "公告現值更新", saveButton: elements.saveCase, importButton: elements.importCase, serialize: serializeLandValueUpdateCase, restore: restoreLandValueUpdateCase, hasData: () => state.records.length > 0, caseName: () => state.queryFileName.replace(/\.(?:xls|xlsx)$/i, "") });
